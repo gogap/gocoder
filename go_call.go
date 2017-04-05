@@ -2,7 +2,6 @@ package gocoder
 
 import (
 	"go/ast"
-	"sync"
 )
 
 type GoCall struct {
