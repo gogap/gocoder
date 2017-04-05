@@ -4,19 +4,22 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
+	"strings"
 )
 
 type GoFile struct {
 	filename string
 	gopath   string
 
-	astFileSet *token.FileSet
-	astFile    *ast.File
-
 	goFuncs []*GoFunc
+
+	options *Options
+
+	*GoExpr
 }
 
-func NewGoFile(filename, gopath string) (goFile *GoFile, err error) {
+func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
@@ -24,10 +27,22 @@ func NewGoFile(filename, gopath string) (goFile *GoFile, err error) {
 	}
 
 	gf := &GoFile{
-		filename:   filename,
-		gopath:     gopath,
-		astFileSet: fset,
-		astFile:    f,
+		filename: filename,
+		GoExpr: &GoExpr{
+			astFile:    f,
+			astFileSet: fset,
+		},
+		options: &Options{},
+	}
+
+	for i := 0; i < len(options); i++ {
+		if err = options[i](gf.options); err != nil {
+			return
+		}
+	}
+
+	if len(gf.options.GoPath) == 0 {
+		gf.options.GoPath = os.Getenv("GOPATH")
 	}
 
 	if err = gf.load(); err != nil {
@@ -45,6 +60,18 @@ func (p *GoFile) Print() error {
 
 func (p *GoFile) Funcs() []*GoFunc {
 	return p.goFuncs
+}
+
+func (p *GoFile) GoPackage() *GoPackage {
+	return p.options.GoPackage
+}
+
+func (p *GoFile) Filename() string {
+	return p.filename
+}
+
+func (p *GoFile) SortFilename() string {
+	return strings.TrimPrefix(p.filename, p.options.GoPath+"/src/")
 }
 
 func (p *GoFile) load() (err error) {
@@ -73,5 +100,5 @@ func (p *GoFile) loadDecls() error {
 }
 
 func (p *GoFile) parseDeclFunc(decl *ast.FuncDecl) {
-	p.goFuncs = append(p.goFuncs, newGoFunc(p, decl))
+	p.goFuncs = append(p.goFuncs, newGoFunc(p.GoExpr, decl))
 }

@@ -5,16 +5,16 @@ import (
 )
 
 type GoFunc struct {
-	goFile *GoFile
-	decl   *ast.FuncDecl
+	rootExpr *GoExpr
 
+	decl      *ast.FuncDecl
 	callExprs []*ast.CallExpr
 }
 
-func newGoFunc(gofile *GoFile, decl *ast.FuncDecl) (gofunc *GoFunc) {
+func newGoFunc(rootExpr *GoExpr, decl *ast.FuncDecl) (gofunc *GoFunc) {
 	g := &GoFunc{
-		goFile: gofile,
-		decl:   decl,
+		rootExpr: rootExpr,
+		decl:     decl,
 	}
 
 	g.load()
@@ -28,29 +28,27 @@ func (p *GoFunc) String() string {
 	return p.decl.Name.String()
 }
 
-func (p *GoFunc) GoFile() *GoFile {
-	return p.goFile
+func (p *GoFunc) Print() error {
+	return ast.Print(p.rootExpr.astFileSet, p.decl)
 }
 
-func (p *GoFunc) Params() *GoParams {
-	return &GoParams{
-		goFunc:    p,
-		astParams: p.decl.Type.Params,
-	}
+func (p *GoFunc) Root() *GoExpr {
+	return p.rootExpr
 }
 
-func (p *GoFunc) Results() *GoResults {
-	return &GoResults{
-		goFunc:     p,
-		astResults: p.decl.Type.Results,
-	}
+func (p *GoFunc) Params() *GoFieldList {
+	return newFieldList(p.rootExpr, p.decl.Type.Params)
+}
+
+func (p *GoFunc) Results() *GoFieldList {
+	return newFieldList(p.rootExpr, p.decl.Type.Results)
 }
 
 func (p *GoFunc) FindCall(funcName string) (call *GoCall, exist bool) {
 
 	for i := 0; i < len(p.callExprs); i++ {
 		if isCallingFuncOf(p.callExprs[i], funcName) {
-			goCall := newGoCall(p, p.callExprs[i])
+			goCall := newGoCall(p.rootExpr, p.callExprs[i])
 			return goCall, true
 		}
 	}
@@ -68,4 +66,7 @@ func (p *GoFunc) load() {
 		}
 		return true
 	})
+}
+
+func (p *GoFunc) goNode() {
 }

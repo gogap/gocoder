@@ -2,19 +2,23 @@ package gocoder
 
 import (
 	"go/ast"
+	"sync"
 )
 
 type GoCall struct {
-	goFunc *GoFunc
+	*GoExpr
+
+	rootExpr      *GoExpr
+	args          []*GoExpr
+	inspectGoExpr *GoExpr
 
 	astCall *ast.CallExpr
-	args    *GoCallArgs
 }
 
-func newGoCall(goFunc *GoFunc, astCall *ast.CallExpr) *GoCall {
+func newGoCall(rootExpr *GoExpr, astCall *ast.CallExpr) *GoCall {
 	g := &GoCall{
-		goFunc:  goFunc,
-		astCall: astCall,
+		rootExpr: rootExpr,
+		astCall:  astCall,
 	}
 
 	g.load()
@@ -22,18 +26,31 @@ func newGoCall(goFunc *GoFunc, astCall *ast.CallExpr) *GoCall {
 	return g
 }
 
-func (p *GoCall) GoFunc() *GoFunc {
-	return p.goFunc
-}
-
 func (p *GoCall) load() {
 
+	p.inspectGoExpr = newGoExpr(p.rootExpr, p.astCall.Fun)
+
+	for _, arg := range p.astCall.Args {
+
+		newArg := newGoExpr(
+			p.rootExpr,
+			arg)
+
+		p.args = append(p.args, newArg)
+	}
+
+	p.GoExpr = newGoExpr(p.rootExpr, p.astCall)
 }
 
-func (p *GoCall) NumArgs() int {
-	return len(p.astCall.Args)
-}
-
-func (p *GoCall) Args() *GoCallArgs {
+func (p *GoCall) Args() []*GoExpr {
 	return p.args
+}
+
+func (p *GoCall) Inspect(f func(GoNode) bool) {
+	for i := 0; i < len(p.args); i++ {
+		p.args[i].Inspect(f)
+	}
+}
+
+func (p *GoCall) goNode() {
 }
