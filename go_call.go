@@ -41,6 +41,14 @@ func (p *GoCall) load() {
 	p.GoExpr = newGoExpr(p.rootExpr, p.astCall)
 }
 
+func (p *GoCall) Name() string {
+	ident, ok := p.astCall.Fun.(*ast.Ident)
+	if !ok {
+		return ""
+	}
+	return ident.Name
+}
+
 func (p *GoCall) Args() []*GoExpr {
 	return p.args
 }
