@@ -11,18 +11,18 @@ type GoPackageOption func(*GoPackage) error
 type GoPackage struct {
 	options *Options
 
-	importPkg string
-	pkgDir    string
+	pkgPath string
+	pkgDir  string
 
 	gofiles []*GoFile
 
 	importBy *GoPackage
 }
 
-func NewGoPackage(importPkg string, options ...Option) (goPackage *GoPackage, err error) {
+func NewGoPackage(pkgPath string, options ...Option) (goPackage *GoPackage, err error) {
 	pkg := &GoPackage{
-		importPkg: importPkg,
-		options:   &Options{},
+		pkgPath: pkgPath,
+		options: &Options{},
 	}
 
 	for i := 0; i < len(options); i++ {
@@ -35,7 +35,7 @@ func NewGoPackage(importPkg string, options ...Option) (goPackage *GoPackage, er
 		pkg.options.GoPath = os.Getenv("GOPATH")
 	}
 
-	pkg.pkgDir = filepath.Join(pkg.options.GoPath, "/src/", pkg.importPkg)
+	pkg.pkgDir = filepath.Join(pkg.options.GoPath, "/src/", pkg.pkgPath)
 
 	fi, err := os.Stat(pkg.pkgDir)
 	if err != nil {
@@ -60,15 +60,15 @@ func NewGoPackage(importPkg string, options ...Option) (goPackage *GoPackage, er
 }
 
 func (p *GoPackage) Name() string {
-	return filepath.Base(p.importPkg)
+	return filepath.Base(p.pkgPath)
 }
 
 func (p *GoPackage) Options() Options {
 	return *p.options
 }
 
-func (p *GoPackage) Package() string {
-	return p.importPkg
+func (p *GoPackage) Path() string {
+	return p.pkgPath
 }
 
 func (p *GoPackage) PackageDir() string {
@@ -94,7 +94,11 @@ func (p *GoPackage) load() error {
 			return nil
 		}
 
-		gofile, err := NewGoFile(filename, OptionGoPath(p.options.GoPath))
+		gofile, err := NewGoFile(filename,
+			OptionGoPath(p.options.GoPath),
+			OptionIgnoreSystemPackage(p.options.IgnoreSystemPackages),
+		)
+
 		if err != nil {
 			return err
 		}

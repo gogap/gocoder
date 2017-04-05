@@ -7,9 +7,9 @@ import (
 type GoCall struct {
 	*GoExpr
 
-	rootExpr      *GoExpr
-	args          []*GoExpr
-	inspectGoExpr *GoExpr
+	rootExpr *GoExpr
+	args     []*GoExpr
+	goFun    *GoExpr
 
 	astCall *ast.CallExpr
 }
@@ -27,7 +27,7 @@ func newGoCall(rootExpr *GoExpr, astCall *ast.CallExpr) *GoCall {
 
 func (p *GoCall) load() {
 
-	p.inspectGoExpr = newGoExpr(p.rootExpr, p.astCall.Fun)
+	p.goFun = newGoExpr(p.rootExpr, p.astCall.Fun)
 
 	for _, arg := range p.astCall.Args {
 
@@ -54,6 +54,7 @@ func (p *GoCall) Args() []*GoExpr {
 }
 
 func (p *GoCall) Inspect(f func(GoNode) bool) {
+	p.goFun.Inspect(f)
 	for i := 0; i < len(p.args); i++ {
 		p.args[i].Inspect(f)
 	}

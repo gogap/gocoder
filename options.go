@@ -8,9 +8,10 @@ import (
 type Option func(*Options) error
 
 type Options struct {
-	GoPath    string
-	GoPackage *GoPackage
-	ImportBy  *GoPackage
+	GoPath               string
+	GoPackage            *GoPackage
+	ImportBy             *GoPackage
+	IgnoreSystemPackages bool
 }
 
 func OptionGoPath(gopath string) Option {
@@ -45,6 +46,13 @@ func OptionImportBy(pkg *GoPackage) Option {
 func OptionGoPackage(goPkg *GoPackage) Option {
 	return func(g *Options) (err error) {
 		g.GoPackage = goPkg
+		return nil
+	}
+}
+
+func OptionIgnoreSystemPackage(ignore bool) Option {
+	return func(g *Options) (err error) {
+		g.IgnoreSystemPackages = true
 		return nil
 	}
 }

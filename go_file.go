@@ -14,6 +14,8 @@ type GoFile struct {
 
 	goFuncs []*GoFunc
 
+	importPackages []*GoPackage
+
 	options *Options
 
 	*GoExpr
@@ -49,6 +51,10 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 		return
 	}
 
+	if err = gf.loadImportPackages(); err != nil {
+		return
+	}
+
 	goFile = gf
 
 	return
@@ -62,7 +68,7 @@ func (p *GoFile) Funcs() []*GoFunc {
 	return p.goFuncs
 }
 
-func (p *GoFile) GoPackage() *GoPackage {
+func (p *GoFile) Package() *GoPackage {
 	return p.options.GoPackage
 }
 
@@ -70,8 +76,21 @@ func (p *GoFile) Filename() string {
 	return p.filename
 }
 
-func (p *GoFile) SortFilename() string {
+func (p *GoFile) ShortFilename() string {
 	return strings.TrimPrefix(p.filename, p.options.GoPath+"/src/")
+}
+
+func (p *GoFile) Imports() []*GoPackage {
+	return p.importPackages
+}
+
+func (p *GoFile) FindImport(importPath string) (*GoPackage, bool) {
+	for i := 0; i < len(p.importPackages); i++ {
+		if importPath == p.importPackages[i].Path() {
+			return p.importPackages[i], true
+		}
+	}
+	return nil, false
 }
 
 func (p *GoFile) load() (err error) {
@@ -80,6 +99,24 @@ func (p *GoFile) load() (err error) {
 	}
 
 	return
+}
+
+func (p *GoFile) loadImportPackages() (err error) {
+	for _, impt := range p.astFile.Imports {
+		var pkg *GoPackage
+		imptPath := strings.Trim(impt.Path.Value, "\"")
+
+		if p.options.IgnoreSystemPackages && !strings.HasPrefix(imptPath, p.options.GoPath) {
+			continue
+		}
+
+		pkg, err = NewGoPackage(imptPath, OptionImportBy(p.Package()))
+		if err != nil {
+			return
+		}
+		p.importPackages = append(p.importPackages, pkg)
+	}
+	return nil
 }
 
 func (p *GoFile) loadDecls() error {
