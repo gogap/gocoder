@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 type GoFile struct {
@@ -17,6 +18,9 @@ type GoFile struct {
 
 	importPackages    []string //path
 	mapImportPackages map[string]*GoPackage
+	mapStructs        map[string]*GoStruct
+
+	syncNewImportLocker sync.Mutex
 
 	*GoExpr
 }
@@ -34,6 +38,7 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 			astFile:    f,
 			astFileSet: fset,
 		},
+		mapStructs:        make(map[string]*GoStruct),
 		mapImportPackages: make(map[string]*GoPackage),
 	}
 
@@ -50,6 +55,8 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 	if err = gf.loadImportPackages(); err != nil {
 		return
 	}
+
+	gf.loadStructs()
 
 	goFile = gf
 
@@ -80,7 +87,7 @@ func (p *GoFile) Imports() []string {
 	return p.importPackages
 }
 
-func (p *GoFile) FindImportByName(name string) (*GoPackage, bool) {
+func (p *GoFile) FindImportByName(name string) (goPkg *GoPackage, exist bool) {
 	for i := 0; i < len(p.importPackages); i++ {
 		if name == filepath.Base(p.importPackages[i]) {
 			return p.FindImportByPath(p.importPackages[i])
@@ -93,9 +100,12 @@ func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
 
 	pkg, exist := p.mapImportPackages[importPath]
 	if exist {
+		var err error
 		if pkg == nil {
+			p.syncNewImportLocker.Lock()
+			defer p.syncNewImportLocker.Unlock()
 
-			nPkg, err := NewGoPackage(importPath,
+			pkg, err = NewGoPackage(importPath,
 				OptionImportByPackage(p.Package()),
 				OptionImportByFile(p),
 			)
@@ -103,10 +113,9 @@ func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
 			if err != nil {
 				return nil, false
 			}
-
-			p.mapImportPackages[importPath] = nPkg
-			return nPkg, true
 		}
+		p.mapImportPackages[importPath] = pkg
+		return pkg, true
 	}
 
 	return nil, false
@@ -120,9 +129,44 @@ func (p *GoFile) load() (err error) {
 	return
 }
 
+func (p *GoFile) FindStruct(name string) (goStruct *GoStruct, exist bool) {
+	goStruct, exist = p.mapStructs[name]
+	return
+}
+
+func (p *GoFile) loadStructs() {
+	for i := 0; i < len(p.GoExpr.astFile.Decls); i++ {
+		genDecl, ok := p.GoExpr.astFile.Decls[i].(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+
+		if genDecl.Tok != token.TYPE {
+			continue
+		}
+
+		if len(genDecl.Specs) != 1 {
+			continue
+		}
+
+		typeSpec := genDecl.Specs[0].(*ast.TypeSpec)
+
+		// identType, ok := typeSpec.Type.(*ast.Ident)
+		// if ok {
+		// 	p.structType = identType.Name
+		// }
+
+		structType, ok := typeSpec.Type.(*ast.StructType)
+		if !ok {
+			continue
+		}
+
+		p.mapStructs[typeSpec.Name.Name] = newGoStruct(p.rootExpr, structType, OptionExprInGoFile(p))
+	}
+}
+
 func (p *GoFile) loadImportPackages() (err error) {
 	for _, impt := range p.astFile.Imports {
-		// var pkg *GoPackage
 		imptPath := strings.Trim(impt.Path.Value, "\"")
 		pathInGopath := filepath.Join(p.options.GoPath, "src", imptPath)
 

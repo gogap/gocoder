@@ -1,7 +1,6 @@
 package gocoder
 
 import (
-	"fmt"
 	"go/ast"
 )
 
@@ -9,6 +8,7 @@ func fieldTypeToStringType(field *ast.Field) string {
 	exprStr := ""
 
 	selector := 0
+	mapChar := ""
 
 	ast.Inspect(field.Type, func(n ast.Node) bool {
 		switch ex := n.(type) {
@@ -17,15 +17,22 @@ func fieldTypeToStringType(field *ast.Field) string {
 				selector += 1
 			}
 		case *ast.Ident:
+
 			exprStr += ex.Name
 			if selector > 0 {
 				exprStr += "."
 				selector--
 			}
+
+			if len(mapChar) > 0 {
+				exprStr += mapChar
+				mapChar = ""
+			}
 		case *ast.InterfaceType:
 			exprStr += "interface{}"
 		case *ast.MapType:
-			exprStr += fmt.Sprintf("map[%s]%s", ex.Key, ex.Value)
+			exprStr += "map["
+			mapChar = "]"
 		case *ast.StarExpr:
 			exprStr += "*"
 		case *ast.ArrayType:
@@ -61,4 +68,22 @@ func isCallingFuncOf(expr interface{}, name string) bool {
 		}
 	}
 	return false
+}
+
+func trimStarExpr(expr ast.Expr) ast.Expr {
+
+	typeExpr := expr
+
+	for {
+		starExpr, isStar := typeExpr.(*ast.StarExpr)
+
+		if isStar {
+			typeExpr = starExpr.X
+			continue
+		}
+
+		break
+	}
+
+	return typeExpr
 }

@@ -25,9 +25,22 @@ func newGoExpr(rootExpr *GoExpr, expr ast.Expr, options ...Option) *GoExpr {
 		expr:     expr,
 	}
 
-	if len(options) == 0 {
-		goExpr.options.init(rootExpr.options.Copy()...)
+	var opts []Option
+
+	var rootOptions []Option
+	if rootExpr != nil {
+		rootOptions = rootExpr.options.Copy()
 	}
+
+	if len(rootOptions) > 0 {
+		opts = append(opts, rootOptions...)
+	}
+
+	if len(options) > 0 {
+		opts = append(opts, options...)
+	}
+
+	goExpr.options.init(opts...)
 
 	return goExpr
 }
