@@ -36,6 +36,48 @@ func (p *GoSelector) load() {
 	}
 }
 
+func (p *GoSelector) IsPackage() bool {
+	xIdent, ok := p.astExpr.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+
+	if len(xIdent.Name) == 0 {
+		return false
+	}
+
+	gofile := p.Root().Options().GoFile
+
+	if gofile == nil {
+		return false
+	}
+
+	_, b := gofile.FindImportByName(xIdent.Name)
+
+	return b
+}
+
+func (p *GoSelector) ToPackage() *GoPackage {
+	xIdent, ok := p.astExpr.X.(*ast.Ident)
+	if !ok {
+		return nil
+	}
+
+	if len(xIdent.Name) == 0 {
+		return nil
+	}
+
+	gofile := p.Root().Options().GoFile
+
+	if gofile == nil {
+		return nil
+	}
+
+	pkg, _ := gofile.FindImportByName(xIdent.Name)
+
+	return pkg
+}
+
 func (p *GoSelector) Inspect(f func(GoNode) bool) {
 	p.goXExpr.Inspect(f)
 	p.goSelIdent.Inspect(f)

@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -14,9 +15,8 @@ type GoFile struct {
 
 	goFuncs []*GoFunc
 
-	importPackages []*GoPackage
-
-	options *Options
+	importPackages    []string //path
+	mapImportPackages map[string]*GoPackage
 
 	*GoExpr
 }
@@ -34,17 +34,13 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 			astFile:    f,
 			astFileSet: fset,
 		},
-		options: &Options{},
+		mapImportPackages: make(map[string]*GoPackage),
 	}
 
-	for i := 0; i < len(options); i++ {
-		if err = options[i](gf.options); err != nil {
-			return
-		}
-	}
+	options = append(options, OptionExprInGoFile(gf))
 
-	if len(gf.options.GoPath) == 0 {
-		gf.options.GoPath = os.Getenv("GOPATH")
+	if err = gf.GoExpr.options.init(options...); err != nil {
+		return
 	}
 
 	if err = gf.load(); err != nil {
@@ -80,16 +76,39 @@ func (p *GoFile) ShortFilename() string {
 	return strings.TrimPrefix(p.filename, p.options.GoPath+"/src/")
 }
 
-func (p *GoFile) Imports() []*GoPackage {
+func (p *GoFile) Imports() []string {
 	return p.importPackages
 }
 
-func (p *GoFile) FindImport(importPath string) (*GoPackage, bool) {
+func (p *GoFile) FindImportByName(name string) (*GoPackage, bool) {
 	for i := 0; i < len(p.importPackages); i++ {
-		if importPath == p.importPackages[i].Path() {
-			return p.importPackages[i], true
+		if name == filepath.Base(p.importPackages[i]) {
+			return p.FindImportByPath(p.importPackages[i])
 		}
 	}
+	return nil, false
+}
+
+func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
+
+	pkg, exist := p.mapImportPackages[importPath]
+	if exist {
+		if pkg == nil {
+
+			nPkg, err := NewGoPackage(importPath,
+				OptionImportByPackage(p.Package()),
+				OptionImportByFile(p),
+			)
+
+			if err != nil {
+				return nil, false
+			}
+
+			p.mapImportPackages[importPath] = nPkg
+			return nPkg, true
+		}
+	}
+
 	return nil, false
 }
 
@@ -103,19 +122,19 @@ func (p *GoFile) load() (err error) {
 
 func (p *GoFile) loadImportPackages() (err error) {
 	for _, impt := range p.astFile.Imports {
-		var pkg *GoPackage
+		// var pkg *GoPackage
 		imptPath := strings.Trim(impt.Path.Value, "\"")
+		pathInGopath := filepath.Join(p.options.GoPath, "src", imptPath)
 
-		if p.options.IgnoreSystemPackages && !strings.HasPrefix(imptPath, p.options.GoPath) {
+		_, e := os.Stat(pathInGopath)
+		if e != nil {
 			continue
 		}
 
-		pkg, err = NewGoPackage(imptPath, OptionImportBy(p.Package()))
-		if err != nil {
-			return
-		}
-		p.importPackages = append(p.importPackages, pkg)
+		p.importPackages = append(p.importPackages, imptPath)
+		p.mapImportPackages[imptPath] = nil
 	}
+
 	return nil
 }
 
@@ -126,7 +145,7 @@ func (p *GoFile) loadDecls() error {
 			switch d := n.(type) {
 			case *ast.FuncDecl:
 				{
-					p.parseDeclFunc(d)
+					p.goFuncs = append(p.goFuncs, newGoFunc(p.GoExpr, d))
 				}
 			}
 
@@ -134,8 +153,4 @@ func (p *GoFile) loadDecls() error {
 		})
 	}
 	return nil
-}
-
-func (p *GoFile) parseDeclFunc(decl *ast.FuncDecl) {
-	p.goFuncs = append(p.goFuncs, newGoFunc(p.GoExpr, decl))
 }

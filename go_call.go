@@ -18,6 +18,7 @@ func newGoCall(rootExpr *GoExpr, astCall *ast.CallExpr) *GoCall {
 	g := &GoCall{
 		rootExpr: rootExpr,
 		astCall:  astCall,
+		GoExpr:   newGoExpr(rootExpr, astCall),
 	}
 
 	g.load()
@@ -37,8 +38,6 @@ func (p *GoCall) load() {
 
 		p.args = append(p.args, newArg)
 	}
-
-	p.GoExpr = newGoExpr(p.rootExpr, p.astCall)
 }
 
 func (p *GoCall) Name() string {

@@ -16,6 +16,7 @@ func newGoBasicLit(rootExpr *GoExpr, astBasicLit *ast.BasicLit) *GoBasicLit {
 	g := &GoBasicLit{
 		rootExpr: rootExpr,
 		astExpr:  astBasicLit,
+		GoExpr:   newGoExpr(rootExpr, astBasicLit),
 	}
 
 	g.load()
@@ -24,7 +25,6 @@ func newGoBasicLit(rootExpr *GoExpr, astBasicLit *ast.BasicLit) *GoBasicLit {
 }
 
 func (p *GoBasicLit) load() {
-	p.GoExpr = newGoExpr(p.rootExpr, p.astExpr)
 }
 
 func (p *GoBasicLit) Inspect(f func(GoNode) bool) {

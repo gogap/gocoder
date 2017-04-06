@@ -15,21 +15,33 @@ type GoExpr struct {
 
 	walkCache []GoNode
 	walkOnce  sync.Once
+
+	options Options
 }
 
-func newGoExpr(rootExpr *GoExpr, expr ast.Expr) *GoExpr {
-	return &GoExpr{
+func newGoExpr(rootExpr *GoExpr, expr ast.Expr, options ...Option) *GoExpr {
+	goExpr := &GoExpr{
 		rootExpr: rootExpr,
 		expr:     expr,
 	}
+
+	if len(options) == 0 {
+		goExpr.options.init(rootExpr.options.Copy()...)
+	}
+
+	return goExpr
 }
 
 func (p *GoExpr) Print() error {
-	if p == nil {
-		return nil
-	}
-
 	return ast.Print(p.astFileSet, p.expr)
+}
+
+func (p *GoExpr) Root() *GoExpr {
+	return p.rootExpr
+}
+
+func (p *GoExpr) Options() Options {
+	return p.options
 }
 
 func (p *GoExpr) walk() {

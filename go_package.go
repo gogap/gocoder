@@ -15,8 +15,6 @@ type GoPackage struct {
 	pkgDir  string
 
 	gofiles []*GoFile
-
-	importBy *GoPackage
 }
 
 func NewGoPackage(pkgPath string, options ...Option) (goPackage *GoPackage, err error) {
@@ -25,10 +23,8 @@ func NewGoPackage(pkgPath string, options ...Option) (goPackage *GoPackage, err 
 		options: &Options{},
 	}
 
-	for i := 0; i < len(options); i++ {
-		if err = options[i](pkg.options); err != nil {
-			return
-		}
+	if err = pkg.options.init(options...); err != nil {
+		return
 	}
 
 	if len(pkg.options.GoPath) == 0 {
@@ -94,10 +90,7 @@ func (p *GoPackage) load() error {
 			return nil
 		}
 
-		gofile, err := NewGoFile(filename,
-			OptionGoPath(p.options.GoPath),
-			OptionIgnoreSystemPackage(p.options.IgnoreSystemPackages),
-		)
+		gofile, err := NewGoFile(filename, p.options.Copy()...)
 
 		if err != nil {
 			return err

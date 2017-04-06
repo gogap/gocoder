@@ -10,8 +10,38 @@ type Option func(*Options) error
 type Options struct {
 	GoPath               string
 	GoPackage            *GoPackage
-	ImportBy             *GoPackage
+	GoFile               *GoFile
+	ImportByPackage      *GoPackage
+	ImportByFile         *GoFile
 	IgnoreSystemPackages bool
+
+	options []Option
+}
+
+func (p *Options) init(options ...Option) (err error) {
+	for i := 0; i < len(options); i++ {
+		if err = options[i](p); err != nil {
+			return
+		}
+	}
+
+	p.options = options
+
+	if len(p.GoPath) == 0 {
+		p.GoPath = os.Getenv("GOPATH")
+	}
+
+	return
+}
+
+func (p *Options) Copy() []Option {
+	var options []Option
+
+	for i := 0; i < len(p.options); i++ {
+		options = append(options, p.options[i])
+	}
+
+	return options
 }
 
 func OptionGoPath(gopath string) Option {
@@ -36,9 +66,23 @@ func OptionGoPath(gopath string) Option {
 	}
 }
 
-func OptionImportBy(pkg *GoPackage) Option {
+func OptionExprInGoFile(gofile *GoFile) Option {
 	return func(g *Options) (err error) {
-		g.ImportBy = pkg
+		g.GoFile = gofile
+		return
+	}
+}
+
+func OptionImportByPackage(pkg *GoPackage) Option {
+	return func(g *Options) (err error) {
+		g.ImportByPackage = pkg
+		return
+	}
+}
+
+func OptionImportByFile(file *GoFile) Option {
+	return func(g *Options) (err error) {
+		g.ImportByFile = file
 		return
 	}
 }

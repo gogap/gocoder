@@ -16,6 +16,7 @@ func newGoUnary(rootExpr *GoExpr, unary *ast.UnaryExpr) *GoUnary {
 	g := &GoUnary{
 		rootExpr: rootExpr,
 		astExpr:  unary,
+		GoExpr:   newGoExpr(rootExpr, unary),
 	}
 
 	g.load()
@@ -24,7 +25,6 @@ func newGoUnary(rootExpr *GoExpr, unary *ast.UnaryExpr) *GoUnary {
 }
 
 func (p *GoUnary) load() {
-	p.GoExpr = newGoExpr(p.rootExpr, p.astExpr)
 	if p.astExpr.X != nil {
 		p.goChild = newGoExpr(p.rootExpr, p.astExpr.X)
 	}
