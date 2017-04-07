@@ -1,7 +1,12 @@
 package gocoder
 
+import (
+	"go/token"
+)
+
 type GoNode interface {
 	goNode()
+	Position() token.Position
 	Print() error
 }
 

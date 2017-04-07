@@ -2,6 +2,7 @@ package gocoder
 
 import (
 	"go/ast"
+	"go/token"
 )
 
 type GoAssignStmt struct {
@@ -41,6 +42,10 @@ func (p *GoAssignStmt) Inspect(f func(GoNode) bool) {
 
 func (p *GoAssignStmt) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.astAssignStmt)
+}
+
+func (p *GoAssignStmt) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.astAssignStmt.Pos())
 }
 
 func (p *GoAssignStmt) goNode() {}

@@ -123,3 +123,7 @@ func (p *GoExpr) Inspect(f func(GoNode) bool) {
 		}
 	}
 }
+
+func (p *GoExpr) Position() token.Position {
+	return p.astFileSet.Position(p.expr.Pos())
+}

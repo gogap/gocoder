@@ -2,6 +2,7 @@ package gocoder
 
 import (
 	"go/ast"
+	"go/token"
 )
 
 type GoFunc struct {
@@ -69,4 +70,8 @@ func (p *GoFunc) load() {
 }
 
 func (p *GoFunc) goNode() {
+}
+
+func (p *GoFunc) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.decl.Pos())
 }
