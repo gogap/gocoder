@@ -18,7 +18,6 @@ type GoFile struct {
 
 	importPackages    []string //path
 	mapImportPackages map[string]*GoPackage
-	mapStructs        map[string]*GoStruct
 
 	syncNewImportLocker sync.Mutex
 
@@ -33,12 +32,8 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 	}
 
 	gf := &GoFile{
-		filename: filename,
-		GoExpr: &GoExpr{
-			astFile:    f,
-			astFileSet: fset,
-		},
-		mapStructs:        make(map[string]*GoStruct),
+		filename:          filename,
+		GoExpr:            newRootGoExpr(f, fset),
 		mapImportPackages: make(map[string]*GoPackage),
 	}
 
@@ -55,8 +50,6 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 	if err = gf.loadImportPackages(); err != nil {
 		return
 	}
-
-	gf.loadStructs()
 
 	goFile = gf
 
@@ -122,47 +115,37 @@ func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
 }
 
 func (p *GoFile) load() (err error) {
-	if err = p.loadDecls(); err != nil {
+	if err = p.loadFuncDecls(); err != nil {
 		return
 	}
 
 	return
 }
 
-func (p *GoFile) FindStruct(name string) (goStruct *GoStruct, exist bool) {
-	goStruct, exist = p.mapStructs[name]
-	return
-}
-
-func (p *GoFile) loadStructs() {
+func (p *GoFile) FindType(typeName string) (goType *GoType, exist bool) {
 	for i := 0; i < len(p.GoExpr.astFile.Decls); i++ {
-		genDecl, ok := p.GoExpr.astFile.Decls[i].(*ast.GenDecl)
-		if !ok {
-			continue
-		}
+		ast.Inspect(p.GoExpr.astFile.Decls[i], func(n ast.Node) bool {
+			if exist {
+				return false
+			}
 
-		if genDecl.Tok != token.TYPE {
-			continue
-		}
+			switch node := n.(type) {
+			case *ast.TypeSpec:
+				{
+					if node.Name.Name == typeName {
+						goType = newGoType(p.rootExpr, node)
+						exist = true
+						return false
+					}
 
-		if len(genDecl.Specs) != 1 {
-			continue
-		}
-
-		typeSpec := genDecl.Specs[0].(*ast.TypeSpec)
-
-		// identType, ok := typeSpec.Type.(*ast.Ident)
-		// if ok {
-		// 	p.structType = identType.Name
-		// }
-
-		structType, ok := typeSpec.Type.(*ast.StructType)
-		if !ok {
-			continue
-		}
-
-		p.mapStructs[typeSpec.Name.Name] = newGoStruct(p.rootExpr, structType, OptionExprInGoFile(p))
+					return true
+				}
+			}
+			return true
+		})
 	}
+
+	return
 }
 
 func (p *GoFile) loadImportPackages() (err error) {
@@ -182,7 +165,7 @@ func (p *GoFile) loadImportPackages() (err error) {
 	return nil
 }
 
-func (p *GoFile) loadDecls() error {
+func (p *GoFile) loadFuncDecls() error {
 	for _, decl := range p.astFile.Decls {
 		ast.Inspect(decl, func(n ast.Node) bool {
 

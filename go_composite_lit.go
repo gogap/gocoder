@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 )
 
@@ -28,8 +29,8 @@ func (p *GoCompositeLit) load() {
 	p.goChild = newGoExpr(p.rootExpr, p.astExpr.Type)
 }
 
-func (p *GoCompositeLit) Inspect(f func(GoNode) bool) {
-	p.goChild.Inspect(f)
+func (p *GoCompositeLit) Inspect(f InspectFunc, ctx context.Context) {
+	p.goChild.Inspect(f, ctx)
 }
 
 func (p *GoCompositeLit) goNode() {}

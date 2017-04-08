@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 )
 
@@ -42,17 +43,27 @@ func (p *GoIdent) load() {
 						p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr.Rhs[i]))
 					}
 				}
+			case *ast.ValueSpec:
+				{
+					if expr.Type != nil {
+						p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr.Type))
+					}
+				}
+			case *ast.Field:
+				{
+					if expr.Type != nil {
+						p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr.Type))
+					}
+				}
 			}
 
 		}
 	}
 }
 
-func (p *GoIdent) Inspect(f func(GoNode) bool) {
-	if len(p.goChildren) > 0 {
-		for i := 0; i < len(p.goChildren); i++ {
-			p.goChildren[i].Inspect(f)
-		}
+func (p *GoIdent) Inspect(f InspectFunc, ctx context.Context) {
+	for i := 0; i < len(p.goChildren); i++ {
+		p.goChildren[i].Inspect(f, ctx)
 	}
 }
 

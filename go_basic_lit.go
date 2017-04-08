@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 )
 
@@ -27,7 +28,7 @@ func newGoBasicLit(rootExpr *GoExpr, astBasicLit *ast.BasicLit) *GoBasicLit {
 func (p *GoBasicLit) load() {
 }
 
-func (p *GoBasicLit) Inspect(f func(GoNode) bool) {
+func (p *GoBasicLit) Inspect(f InspectFunc, ctx context.Context) {
 	return
 }
 

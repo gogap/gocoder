@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 )
 
@@ -90,9 +91,9 @@ func (p *GoSelector) GetSelName() string {
 	return p.astExpr.Sel.Name
 }
 
-func (p *GoSelector) Inspect(f func(GoNode) bool) {
-	p.goXExpr.Inspect(f)
-	p.goSelIdent.Inspect(f)
+func (p *GoSelector) Inspect(f InspectFunc, ctx context.Context) {
+	p.goXExpr.Inspect(f, ctx)
+	p.goSelIdent.Inspect(f, ctx)
 }
 
 func (p *GoSelector) goNode() {}

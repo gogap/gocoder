@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 )
 
@@ -52,10 +53,10 @@ func (p *GoCall) Args() []*GoExpr {
 	return p.args
 }
 
-func (p *GoCall) Inspect(f func(GoNode) bool) {
-	p.goFun.Inspect(f)
+func (p *GoCall) Inspect(f InspectFunc, ctx context.Context) {
+	p.goFun.Inspect(f, ctx)
 	for i := 0; i < len(p.args); i++ {
-		p.args[i].Inspect(f)
+		p.args[i].Inspect(f, ctx)
 	}
 }
 

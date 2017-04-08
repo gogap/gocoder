@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 	"go/token"
 )
@@ -30,13 +31,9 @@ func (p *GoAssignStmt) load() {
 	}
 }
 
-func (p *GoAssignStmt) Inspect(f func(GoNode) bool) {
-	if len(p.assignStmtRhsExprs) == 0 {
-		return
-	}
-
+func (p *GoAssignStmt) Inspect(f InspectFunc, ctx context.Context) {
 	for i := 0; i < len(p.assignStmtRhsExprs); i++ {
-		p.assignStmtRhsExprs[i].Inspect(f)
+		p.assignStmtRhsExprs[i].Inspect(f, ctx)
 	}
 }
 

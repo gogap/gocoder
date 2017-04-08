@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 )
 
@@ -30,9 +31,9 @@ func (p *GoUnary) load() {
 	}
 }
 
-func (p *GoUnary) Inspect(f func(GoNode) bool) {
+func (p *GoUnary) Inspect(f InspectFunc, ctx context.Context) {
 	if p.goChild != nil {
-		p.goChild.Inspect(f)
+		p.goChild.Inspect(f, ctx)
 	}
 }
 

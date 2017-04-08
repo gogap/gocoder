@@ -79,6 +79,16 @@ func (p *GoPackage) GoFiles() []*GoFile {
 	return p.gofiles
 }
 
+func (p *GoPackage) FindType(typeName string) (goType *GoType, exist bool) {
+	for i := 0; i < len(p.gofiles); i++ {
+		goType, exist = p.gofiles[i].FindType(typeName)
+		if exist {
+			return
+		}
+	}
+	return
+}
+
 func (p *GoPackage) load() error {
 
 	walkFn := func(filename string, info os.FileInfo, err error) error {

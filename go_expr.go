@@ -1,10 +1,13 @@
 package gocoder
 
 import (
+	"context"
 	"go/ast"
 	"go/token"
 	"sync"
 )
+
+type InspectFunc func(GoNode, context.Context) bool
 
 type GoExpr struct {
 	rootExpr *GoExpr
@@ -17,9 +20,24 @@ type GoExpr struct {
 	walkOnce  sync.Once
 
 	options Options
+
+	isRoot bool
+}
+
+func newRootGoExpr(astFile *ast.File, astFileSet *token.FileSet) *GoExpr {
+	expr := &GoExpr{
+		astFile:    astFile,
+		astFileSet: astFileSet,
+		isRoot:     true,
+	}
+
+	expr.rootExpr = expr
+
+	return expr
 }
 
 func newGoExpr(rootExpr *GoExpr, expr ast.Expr, options ...Option) *GoExpr {
+
 	goExpr := &GoExpr{
 		rootExpr: rootExpr,
 		expr:     expr,
@@ -84,6 +102,10 @@ func (p *GoExpr) walk() {
 			{
 				goNode = newFieldList(p.rootExpr, nodeType)
 			}
+		case *ast.Field:
+			{
+				goNode = newGoField(p.rootExpr, nodeType)
+			}
 		case *ast.UnaryExpr:
 			{
 				goNode = newGoUnary(p.rootExpr, nodeType)
@@ -100,6 +122,14 @@ func (p *GoExpr) walk() {
 			{
 				goNode = newGoSelector(p.rootExpr, nodeType)
 			}
+		case *ast.StructType:
+			{
+				goNode = newGoStruct(p.rootExpr, nodeType)
+			}
+		case *ast.TypeSpec:
+			{
+				goNode = newGoType(p.rootExpr, nodeType)
+			}
 		}
 
 		if goNode == nil {
@@ -112,18 +142,21 @@ func (p *GoExpr) walk() {
 	})
 }
 
-func (p *GoExpr) Inspect(f func(GoNode) bool) {
+func (p *GoExpr) Inspect(f InspectFunc, ctx context.Context) {
 	p.walkOnce.Do(func() {
 		p.walk()
 	})
 
 	for i := 0; i < len(p.walkCache); i++ {
-		if !f(p.walkCache[i]) {
+		if !f(p.walkCache[i], ctx) {
 			return
 		}
 	}
 }
 
 func (p *GoExpr) Position() token.Position {
+	if p.astFileSet == nil {
+		return p.rootExpr.astFileSet.Position(p.expr.Pos())
+	}
 	return p.astFileSet.Position(p.expr.Pos())
 }

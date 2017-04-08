@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"context"
 	"go/token"
 )
 
@@ -11,5 +12,5 @@ type GoNode interface {
 }
 
 type GoNodeInspectable interface {
-	Inspect(f func(GoNode) bool)
+	Inspect(f InspectFunc, ctx context.Context)
 }
