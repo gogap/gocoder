@@ -1,9 +1,9 @@
 package gocoder
 
 import (
-	"context"
 	"go/ast"
 	"go/token"
+	"strings"
 )
 
 type GoField struct {
@@ -11,8 +11,10 @@ type GoField struct {
 
 	astExpr *ast.Field
 
-	goType  *GoExpr
+	// goExpr  *GoExpr
 	goNames []*GoIdent
+
+	fieldType *GoType
 }
 
 func newGoField(rootExpr *GoExpr, field *ast.Field) *GoField {
@@ -26,32 +28,57 @@ func newGoField(rootExpr *GoExpr, field *ast.Field) *GoField {
 	return g
 }
 
-func (p *GoField) Names() []*GoIdent {
-	return p.goNames
+func (p *GoField) NumName() int {
+	return len(p.astExpr.Names)
 }
 
-func (p *GoField) Type() *GoExpr {
-	return p.goType
+func (p *GoField) IsExported() bool {
+	if len(p.astExpr.Names) == 0 {
+		return true
+	}
+
+	return p.astExpr.Names[0].IsExported()
+}
+
+func (p *GoField) Name(i int) *GoIdent {
+	return p.goNames[i]
+}
+
+func (p *GoField) Type() *GoType {
+	return p.fieldType
+}
+
+func (p *GoField) Tag() StructTag {
+	if p.astExpr.Tag == nil {
+		return StructTag("")
+	}
+
+	tag := strings.Trim(p.astExpr.Tag.Value, "\"")
+	tag = strings.Trim(tag, "`")
+
+	return StructTag(tag)
 }
 
 func (p *GoField) load() {
 
-	if p.astExpr.Type != nil {
-		p.goType = newGoExpr(p.rootExpr, p.astExpr.Type)
-	}
+	// if p.astExpr.Type != nil {
+	// 	p.goExpr = newGoExpr(p.rootExpr, p.astExpr.Type)
+	// }
 
 	for i := 0; i < len(p.astExpr.Names); i++ {
 		p.goNames = append(p.goNames, newGoIdent(p.rootExpr, p.astExpr.Names[i]))
 	}
+
+	p.fieldType = newGoType(p.rootExpr, p.astExpr, p.astExpr.Type)
 }
 
 func (p *GoField) Position() token.Position {
 	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
 }
 
-func (p *GoField) Inspect(f InspectFunc, ctx context.Context) {
-	p.goType.Inspect(f, ctx)
-}
+// func (p *GoField) Inspect(f InspectFunc, ctx context.Context) {
+// 	p.goExpr.Inspect(f, ctx)
+// }
 
 func (p *GoField) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.astExpr)

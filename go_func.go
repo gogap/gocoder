@@ -32,6 +32,24 @@ func (p *GoFunc) Name() string {
 	return p.decl.Name.String()
 }
 
+func (p *GoFunc) Receiver() string {
+
+	if p.decl.Recv == nil {
+		return ""
+	}
+
+	if len(p.decl.Recv.List) == 0 {
+		return ""
+	}
+
+	ident, ok := p.decl.Recv.List[0].Type.(*ast.Ident)
+	if !ok {
+		return ""
+	}
+
+	return ident.Name
+}
+
 func (p *GoFunc) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.decl)
 }

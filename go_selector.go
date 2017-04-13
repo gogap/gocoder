@@ -3,10 +3,10 @@ package gocoder
 import (
 	"context"
 	"go/ast"
+	"go/token"
 )
 
 type GoSelector struct {
-	*GoExpr
 	rootExpr *GoExpr
 
 	goSelIdent *GoIdent
@@ -19,7 +19,6 @@ func newGoSelector(rootExpr *GoExpr, astSelector *ast.SelectorExpr) *GoSelector 
 	g := &GoSelector{
 		rootExpr: rootExpr,
 		astExpr:  astSelector,
-		GoExpr:   newGoExpr(rootExpr, astSelector),
 	}
 
 	g.load()
@@ -51,7 +50,7 @@ func (p *GoSelector) IsUsingPackage() bool {
 		return false
 	}
 
-	gofile := p.Root().Options().GoFile
+	gofile := p.rootExpr.Options().GoFile
 
 	if gofile == nil {
 		return false
@@ -76,7 +75,7 @@ func (p *GoSelector) GetUsingPackage() *GoPackage {
 		return nil
 	}
 
-	gofile := p.Root().Options().GoFile
+	gofile := p.rootExpr.Options().GoFile
 
 	if gofile == nil {
 		return nil
@@ -94,6 +93,14 @@ func (p *GoSelector) GetSelName() string {
 func (p *GoSelector) Inspect(f InspectFunc, ctx context.Context) {
 	p.goXExpr.Inspect(f, ctx)
 	p.goSelIdent.Inspect(f, ctx)
+}
+
+func (p *GoSelector) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+}
+
+func (p *GoSelector) Print() error {
+	return ast.Print(p.rootExpr.astFileSet, p.astExpr)
 }
 
 func (p *GoSelector) goNode() {}

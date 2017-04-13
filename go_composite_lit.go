@@ -3,10 +3,11 @@ package gocoder
 import (
 	"context"
 	"go/ast"
+	"go/token"
 )
 
 type GoCompositeLit struct {
-	*GoExpr
+	// *GoExpr
 	rootExpr *GoExpr
 	goChild  *GoExpr
 
@@ -17,7 +18,7 @@ func newGoCompositeLit(rootExpr *GoExpr, astCompositeLit *ast.CompositeLit) *GoC
 	g := &GoCompositeLit{
 		rootExpr: rootExpr,
 		astExpr:  astCompositeLit,
-		GoExpr:   newGoExpr(rootExpr, astCompositeLit),
+		// GoExpr:   newGoExpr(rootExpr, astCompositeLit),
 	}
 
 	g.load()
@@ -31,6 +32,14 @@ func (p *GoCompositeLit) load() {
 
 func (p *GoCompositeLit) Inspect(f InspectFunc, ctx context.Context) {
 	p.goChild.Inspect(f, ctx)
+}
+
+func (p *GoCompositeLit) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+}
+
+func (p *GoCompositeLit) Print() error {
+	return ast.Print(p.rootExpr.astFileSet, p.astExpr)
 }
 
 func (p *GoCompositeLit) goNode() {}

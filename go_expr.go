@@ -2,6 +2,7 @@ package gocoder
 
 import (
 	"context"
+	"fmt"
 	"go/ast"
 	"go/token"
 	"sync"
@@ -14,7 +15,7 @@ type GoExpr struct {
 
 	astFileSet *token.FileSet
 	astFile    *ast.File
-	expr       ast.Expr
+	expr       ast.Node
 
 	walkCache []GoNode
 	walkOnce  sync.Once
@@ -22,6 +23,8 @@ type GoExpr struct {
 	options Options
 
 	isRoot bool
+
+	exprNode GoNode
 }
 
 func newRootGoExpr(astFile *ast.File, astFileSet *token.FileSet) *GoExpr {
@@ -36,7 +39,7 @@ func newRootGoExpr(astFile *ast.File, astFileSet *token.FileSet) *GoExpr {
 	return expr
 }
 
-func newGoExpr(rootExpr *GoExpr, expr ast.Expr, options ...Option) *GoExpr {
+func newGoExpr(rootExpr *GoExpr, expr ast.Node, options ...Option) *GoExpr {
 
 	goExpr := &GoExpr{
 		rootExpr: rootExpr,
@@ -60,6 +63,8 @@ func newGoExpr(rootExpr *GoExpr, expr ast.Expr, options ...Option) *GoExpr {
 
 	goExpr.options.init(opts...)
 
+	goExpr.load()
+
 	return goExpr
 }
 
@@ -71,74 +76,86 @@ func (p *GoExpr) Root() *GoExpr {
 	return p.rootExpr
 }
 
+func (p *GoExpr) Node() GoNode {
+	return p.exprNode
+}
+
+func (p *GoExpr) load() {
+	p.exprNode = p.exprToGoNode(p.expr)
+}
+
+func (p *GoExpr) goNode() {}
+
 func (p *GoExpr) Options() Options {
 	return p.options
+}
+
+func (p *GoExpr) exprToGoNode(n ast.Node) GoNode {
+	var goNode GoNode
+
+	switch nodeType := n.(type) {
+	case *ast.Ident:
+		{
+			goNode = newGoIdent(p.rootExpr, nodeType)
+		}
+	case *ast.CallExpr:
+		{
+			goNode = newGoCall(p.rootExpr, nodeType)
+		}
+	case *ast.FuncDecl:
+		{
+			goNode = newGoFunc(p.rootExpr, nodeType)
+		}
+	case *ast.AssignStmt:
+		{
+			goNode = newGoAssignStmt(p.rootExpr, nodeType)
+		}
+	case *ast.FieldList:
+		{
+			goNode = newFieldList(p.rootExpr, nodeType)
+		}
+	case *ast.Field:
+		{
+			goNode = newGoField(p.rootExpr, nodeType)
+		}
+	case *ast.UnaryExpr:
+		{
+			goNode = newGoUnary(p.rootExpr, nodeType)
+		}
+	case *ast.BasicLit:
+		{
+			goNode = newGoBasicLit(p.rootExpr, nodeType)
+		}
+	case *ast.CompositeLit:
+		{
+			goNode = newGoCompositeLit(p.rootExpr, nodeType)
+		}
+	case *ast.SelectorExpr:
+		{
+			goNode = newGoSelector(p.rootExpr, nodeType)
+		}
+	case *ast.TypeSpec:
+		{
+			goNode = newGoType(p.rootExpr, nodeType, nodeType.Type)
+		}
+	}
+
+	return goNode
 }
 
 func (p *GoExpr) walk() {
 
 	ast.Inspect(p.expr, func(n ast.Node) bool {
 
-		var goNode GoNode
-
-		switch nodeType := n.(type) {
-		case *ast.Ident:
-			{
-				goNode = newGoIdent(p.rootExpr, nodeType)
-			}
-		case *ast.CallExpr:
-			{
-				goNode = newGoCall(p.rootExpr, nodeType)
-			}
-		case *ast.FuncDecl:
-			{
-				goNode = newGoFunc(p.rootExpr, nodeType)
-			}
-		case *ast.AssignStmt:
-			{
-				goNode = newGoAssignStmt(p.rootExpr, nodeType)
-			}
-		case *ast.FieldList:
-			{
-				goNode = newFieldList(p.rootExpr, nodeType)
-			}
-		case *ast.Field:
-			{
-				goNode = newGoField(p.rootExpr, nodeType)
-			}
-		case *ast.UnaryExpr:
-			{
-				goNode = newGoUnary(p.rootExpr, nodeType)
-			}
-		case *ast.BasicLit:
-			{
-				goNode = newGoBasicLit(p.rootExpr, nodeType)
-			}
-		case *ast.CompositeLit:
-			{
-				goNode = newGoCompositeLit(p.rootExpr, nodeType)
-			}
-		case *ast.SelectorExpr:
-			{
-				goNode = newGoSelector(p.rootExpr, nodeType)
-			}
-		case *ast.StructType:
-			{
-				goNode = newGoStruct(p.rootExpr, nodeType)
-			}
-		case *ast.TypeSpec:
-			{
-				goNode = newGoType(p.rootExpr, nodeType)
-			}
-		}
+		goNode := p.exprToGoNode(n)
 
 		if goNode == nil {
-			return true
+			return false
 		}
 
 		p.walkCache = append(p.walkCache, goNode)
 
-		return true
+		return false
 	})
 }
 
@@ -159,4 +176,42 @@ func (p *GoExpr) Position() token.Position {
 		return p.rootExpr.astFileSet.Position(p.expr.Pos())
 	}
 	return p.astFileSet.Position(p.expr.Pos())
+}
+
+func (p *GoExpr) IsIdent() bool {
+	_, ok := p.expr.(*ast.ArrayType)
+	return ok
+}
+
+func (p *GoExpr) IsArray() bool {
+	_, ok := p.expr.(*ast.ArrayType)
+	return ok
+}
+
+func (p *GoExpr) IsInterface() bool {
+	_, ok := p.expr.(*ast.InterfaceType)
+	return ok
+}
+
+func (p *GoExpr) IsMap() bool {
+	_, ok := p.expr.(*ast.MapType)
+	return ok
+}
+
+func (p *GoExpr) IsStruct() bool {
+	_, ok := p.expr.(*ast.StructType)
+	return ok
+}
+
+func (p *GoExpr) IsSelector() bool {
+	_, ok := p.expr.(*ast.SelectorExpr)
+	return ok
+}
+
+func (p *GoExpr) String() string {
+	str, ok := p.Node().(fmt.Stringer)
+	if ok {
+		return str.String()
+	}
+	return astTypeToStringType(p.expr)
 }

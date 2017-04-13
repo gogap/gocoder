@@ -3,10 +3,11 @@ package gocoder
 import (
 	"context"
 	"go/ast"
+	"go/token"
 )
 
 type GoCall struct {
-	*GoExpr
+	// *GoExpr
 
 	rootExpr *GoExpr
 	args     []*GoExpr
@@ -19,7 +20,7 @@ func newGoCall(rootExpr *GoExpr, astCall *ast.CallExpr) *GoCall {
 	g := &GoCall{
 		rootExpr: rootExpr,
 		astCall:  astCall,
-		GoExpr:   newGoExpr(rootExpr, astCall),
+		// GoExpr:   newGoExpr(rootExpr, astCall),
 	}
 
 	g.load()
@@ -61,4 +62,12 @@ func (p *GoCall) Inspect(f InspectFunc, ctx context.Context) {
 }
 
 func (p *GoCall) goNode() {
+}
+
+func (p *GoCall) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.astCall.Pos())
+}
+
+func (p *GoCall) Print() error {
+	return ast.Print(p.rootExpr.astFileSet, p.astCall)
 }

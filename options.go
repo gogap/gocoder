@@ -8,12 +8,13 @@ import (
 type Option func(*Options) error
 
 type Options struct {
-	GoPath               string
-	GoPackage            *GoPackage
-	GoFile               *GoFile
-	ImportByPackage      *GoPackage
-	ImportByFile         *GoFile
-	IgnoreSystemPackages bool
+	GoPath          string
+	GoRoot          string
+	GoPackage       *GoPackage
+	GoFile          *GoFile
+	ImportByPackage *GoPackage
+	ImportByFile    *GoFile
+	// IgnoreSystemPackages bool
 
 	options []Option
 }
@@ -32,6 +33,19 @@ func (p *Options) init(options ...Option) (err error) {
 	}
 
 	return
+}
+
+func (p *Options) Fallback(opts ...Option) (err error) {
+
+	for i := 0; i < len(opts); i++ {
+		if err = opts[i](p); err != nil {
+			return
+		}
+	}
+
+	p.options = append(p.options, opts...)
+
+	return nil
 }
 
 func (p *Options) Copy() []Option {
@@ -66,6 +80,26 @@ func OptionGoPath(gopath string) Option {
 	}
 }
 
+func OptionGoRoot(goroot string) Option {
+	return func(g *Options) (err error) {
+
+		if len(goroot) == 0 {
+			goroot := ""
+			goroot, err = execCommand("go", "env", "GOROOT")
+			if err != nil {
+				return
+			}
+
+			g.GoRoot = goroot
+			return nil
+		}
+
+		g.GoRoot = goroot
+
+		return nil
+	}
+}
+
 func OptionExprInGoFile(gofile *GoFile) Option {
 	return func(g *Options) (err error) {
 		g.GoFile = gofile
@@ -90,13 +124,6 @@ func OptionImportByFile(file *GoFile) Option {
 func OptionGoPackage(goPkg *GoPackage) Option {
 	return func(g *Options) (err error) {
 		g.GoPackage = goPkg
-		return nil
-	}
-}
-
-func OptionIgnoreSystemPackage(ignore bool) Option {
-	return func(g *Options) (err error) {
-		g.IgnoreSystemPackages = true
 		return nil
 	}
 }

@@ -3,13 +3,14 @@ package gocoder
 import (
 	"context"
 	"go/ast"
+	"go/token"
 )
 
 type GoIdent struct {
-	*GoExpr
+	// *GoExpr
 
 	rootExpr   *GoExpr
-	goChildren []*GoExpr
+	goChildren []GoNode
 
 	astExpr *ast.Ident
 }
@@ -18,12 +19,16 @@ func newGoIdent(rootExpr *GoExpr, ident *ast.Ident) *GoIdent {
 	g := &GoIdent{
 		rootExpr: rootExpr,
 		astExpr:  ident,
-		GoExpr:   newGoExpr(rootExpr, ident),
+		// GoExpr:   newGoExpr(rootExpr, ident),
 	}
 
 	g.load()
 
 	return g
+}
+
+func (p *GoIdent) HasObject() bool {
+	return p.astExpr.Obj != nil
 }
 
 func (p *GoIdent) load() {
@@ -56,19 +61,49 @@ func (p *GoIdent) load() {
 					}
 				}
 			}
+		}
+	case ast.Typ:
+		{
+			switch expr := p.astExpr.Obj.Decl.(type) {
+			case *ast.TypeSpec:
+				{
 
+					// switch n := expr.Type.(type) {
+					// case *ast.StructType:
+					// 	{
+					// 		p.goChildren = append(p.goChildren, newGoStruct(p.rootExpr, expr, n))
+					// 	}
+					// default:
+					// 	if expr.Type != nil {
+					// 		p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr.Type))
+					// 	}
+					// }
+					p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr))
+				}
+			}
 		}
 	}
 }
 
 func (p *GoIdent) Inspect(f InspectFunc, ctx context.Context) {
 	for i := 0; i < len(p.goChildren); i++ {
-		p.goChildren[i].Inspect(f, ctx)
+		child, inspectable := p.goChildren[i].(GoNodeInspectable)
+		if inspectable {
+			child.Inspect(f, ctx)
+		}
 	}
 }
 
 func (p *GoIdent) Name() string {
 	return p.astExpr.Name
+}
+
+func (p *GoIdent) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+}
+
+func (p *GoIdent) Print() error {
+	return ast.Print(p.rootExpr.astFileSet, p.astExpr)
 }
 
 func (p *GoIdent) goNode() {}

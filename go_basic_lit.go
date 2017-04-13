@@ -3,10 +3,11 @@ package gocoder
 import (
 	"context"
 	"go/ast"
+	"go/token"
 )
 
 type GoBasicLit struct {
-	*GoExpr
+	// *GoExpr
 
 	rootExpr *GoExpr
 
@@ -17,7 +18,7 @@ func newGoBasicLit(rootExpr *GoExpr, astBasicLit *ast.BasicLit) *GoBasicLit {
 	g := &GoBasicLit{
 		rootExpr: rootExpr,
 		astExpr:  astBasicLit,
-		GoExpr:   newGoExpr(rootExpr, astBasicLit),
+		// GoExpr:   newGoExpr(rootExpr, astBasicLit),
 	}
 
 	g.load()
@@ -41,3 +42,11 @@ func (p *GoBasicLit) Kind() string {
 }
 
 func (p *GoBasicLit) goNode() {}
+
+func (p *GoBasicLit) Position() token.Position {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+}
+
+func (p *GoBasicLit) Print() error {
+	return ast.Print(p.rootExpr.astFileSet, p.astExpr)
+}

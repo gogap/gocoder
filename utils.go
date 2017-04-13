@@ -2,15 +2,17 @@ package gocoder
 
 import (
 	"go/ast"
+	"os/exec"
+	"strings"
 )
 
-func fieldTypeToStringType(field *ast.Field) string {
+func astTypeToStringType(typ ast.Node) string {
 	exprStr := ""
 
 	selector := 0
 	mapChar := ""
 
-	ast.Inspect(field.Type, func(n ast.Node) bool {
+	ast.Inspect(typ, func(n ast.Node) bool {
 		switch ex := n.(type) {
 		case *ast.SelectorExpr:
 			{
@@ -48,7 +50,7 @@ func fieldTypeToStringType(field *ast.Field) string {
 }
 
 func isFieldTypeOf(field *ast.Field, strType string) bool {
-	return fieldTypeToStringType(field) == strType
+	return astTypeToStringType(field.Type) == strType
 }
 
 func isCallingFuncOf(expr interface{}, name string) bool {
@@ -86,4 +88,17 @@ func trimStarExpr(expr ast.Expr) ast.Expr {
 	}
 
 	return typeExpr
+}
+
+func execCommand(name string, args ...string) (result string, err error) {
+	var out []byte
+	out, err = exec.Command(name, args...).Output()
+	if err != nil {
+		return
+	}
+
+	result = string(out)
+	result = strings.TrimSuffix(result, "\n")
+
+	return
 }

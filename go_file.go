@@ -11,8 +11,8 @@ import (
 )
 
 type GoFile struct {
-	filename string
-	gopath   string
+	filename      string
+	shortFilename string
 
 	goFuncs []*GoFunc
 
@@ -22,6 +22,9 @@ type GoFile struct {
 	syncNewImportLocker sync.Mutex
 
 	*GoExpr
+
+	importInitOnce sync.Once
+	loadDeclOnce   sync.Once
 }
 
 func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
@@ -43,12 +46,10 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 		return
 	}
 
-	if err = gf.load(); err != nil {
-		return
-	}
-
-	if err = gf.loadImportPackages(); err != nil {
-		return
+	if strings.HasPrefix(filename, gf.options.GoPath) {
+		gf.shortFilename = strings.TrimPrefix(filename, gf.options.GoPath+"/src/")
+	} else if strings.HasPrefix(filename, gf.options.GoRoot) {
+		gf.shortFilename = strings.TrimPrefix(filename, gf.options.GoRoot+"/src/")
 	}
 
 	goFile = gf
@@ -60,8 +61,22 @@ func (p *GoFile) Print() error {
 	return ast.Print(p.astFileSet, p.astFile)
 }
 
-func (p *GoFile) Funcs() []*GoFunc {
-	return p.goFuncs
+func (p *GoFile) NumFuncs() int {
+
+	p.loadDeclOnce.Do(func() {
+		p.loadFuncDecls()
+	})
+
+	return len(p.goFuncs)
+}
+
+func (p *GoFile) Func(i int) *GoFunc {
+
+	p.loadDeclOnce.Do(func() {
+		p.loadFuncDecls()
+	})
+
+	return p.goFuncs[i]
 }
 
 func (p *GoFile) Package() *GoPackage {
@@ -73,14 +88,32 @@ func (p *GoFile) Filename() string {
 }
 
 func (p *GoFile) ShortFilename() string {
-	return strings.TrimPrefix(p.filename, p.options.GoPath+"/src/")
+	return p.shortFilename
+}
+
+func (p *GoFile) String() string {
+	return p.shortFilename
 }
 
 func (p *GoFile) Imports() []string {
+
+	p.importInitOnce.Do(func() {
+		p.loadImportPackages()
+	})
+
 	return p.importPackages
 }
 
+func (p *GoFile) InGoRoot() bool {
+	return p.Package().inGoRoot
+}
+
 func (p *GoFile) FindImportByName(name string) (goPkg *GoPackage, exist bool) {
+
+	p.importInitOnce.Do(func() {
+		p.loadImportPackages()
+	})
+
 	for i := 0; i < len(p.importPackages); i++ {
 		if name == filepath.Base(p.importPackages[i]) {
 			return p.FindImportByPath(p.importPackages[i])
@@ -90,7 +123,6 @@ func (p *GoFile) FindImportByName(name string) (goPkg *GoPackage, exist bool) {
 }
 
 func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
-
 	pkg, exist := p.mapImportPackages[importPath]
 	if exist {
 		var err error
@@ -114,15 +146,12 @@ func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
 	return nil, false
 }
 
-func (p *GoFile) load() (err error) {
-	if err = p.loadFuncDecls(); err != nil {
-		return
-	}
+func (p *GoFile) FindType(typeName string) (goType *GoExpr, exist bool) {
 
-	return
-}
+	p.loadDeclOnce.Do(func() {
+		p.loadFuncDecls()
+	})
 
-func (p *GoFile) FindType(typeName string) (goType *GoType, exist bool) {
 	for i := 0; i < len(p.GoExpr.astFile.Decls); i++ {
 		ast.Inspect(p.GoExpr.astFile.Decls[i], func(n ast.Node) bool {
 			if exist {
@@ -133,7 +162,7 @@ func (p *GoFile) FindType(typeName string) (goType *GoType, exist bool) {
 			case *ast.TypeSpec:
 				{
 					if node.Name.Name == typeName {
-						goType = newGoType(p.rootExpr, node)
+						goType = newGoExpr(p.rootExpr, node)
 						exist = true
 						return false
 					}
@@ -151,15 +180,25 @@ func (p *GoFile) FindType(typeName string) (goType *GoType, exist bool) {
 func (p *GoFile) loadImportPackages() (err error) {
 	for _, impt := range p.astFile.Imports {
 		imptPath := strings.Trim(impt.Path.Value, "\"")
-		pathInGopath := filepath.Join(p.options.GoPath, "src", imptPath)
 
-		_, e := os.Stat(pathInGopath)
-		if e != nil {
+		pathInGopath := filepath.Join(p.options.GoPath, "src", imptPath)
+		_, e1 := os.Stat(pathInGopath)
+
+		if e1 == nil {
+			p.importPackages = append(p.importPackages, imptPath)
+			p.mapImportPackages[imptPath] = nil
+
 			continue
 		}
 
-		p.importPackages = append(p.importPackages, imptPath)
-		p.mapImportPackages[imptPath] = nil
+		pathInGoRoot := filepath.Join(p.options.GoRoot, "src", imptPath)
+		_, e2 := os.Stat(pathInGoRoot)
+
+		if e2 == nil {
+			p.importPackages = append(p.importPackages, imptPath)
+			p.mapImportPackages[imptPath] = nil
+			continue
+		}
 	}
 
 	return nil
