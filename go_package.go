@@ -16,8 +16,6 @@ type GoPackage struct {
 	pkgPath string
 	pkgDir  string
 
-	// gofiles []*GoFile
-
 	goFiles map[string]*GoFile
 	files   []string
 

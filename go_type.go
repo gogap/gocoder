@@ -14,6 +14,8 @@ type GoType struct {
 
 	node   GoNode
 	parent ast.Node
+
+	funcs []*GoFunc
 }
 
 func newGoType(rootExpr *GoExpr, parent ast.Node, astType ast.Expr) *GoType {
@@ -60,17 +62,34 @@ func (p *GoType) load() {
 		{
 			p.node = newGoInterface(p.rootExpr, expr)
 		}
-		// case *ast.TypeSpec:
-		// 	{
-		// 		fmt.Println("...")
-		// 		switch n := expr.Type.(type) {
-		// 		case *ast.StructType:
-		// 			{
-		// 				p.node = newGoStruct(p.rootExpr, expr, n)
-		// 			}
-		// 		}
-		// 	}
 	}
+
+	typSpec, ok := p.parent.(*ast.TypeSpec)
+	if ok {
+		for i := 0; i < p.rootExpr.options.GoPackage.NumFuncs(); i++ {
+			if p.rootExpr.options.GoPackage.Func(i).Receiver() == typSpec.Name.Name {
+				p.funcs = append(p.funcs, p.rootExpr.options.GoPackage.Func(i))
+			}
+		}
+	}
+}
+
+func (p *GoType) MethodByName(name string) *GoFunc {
+	for i := 0; i < len(p.funcs); i++ {
+		if p.funcs[i].Name() == name {
+			return p.funcs[i]
+		}
+	}
+
+	return nil
+}
+
+func (p *GoType) Method(i int) *GoFunc {
+	return p.funcs[i]
+}
+
+func (p *GoType) NumMethods() int {
+	return len(p.funcs)
 }
 
 func (p *GoType) Inspect(f InspectFunc, ctx context.Context) {

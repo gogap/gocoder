@@ -7,8 +7,6 @@ import (
 )
 
 type GoBasicLit struct {
-	// *GoExpr
-
 	rootExpr *GoExpr
 
 	astExpr *ast.BasicLit
@@ -18,7 +16,6 @@ func newGoBasicLit(rootExpr *GoExpr, astBasicLit *ast.BasicLit) *GoBasicLit {
 	g := &GoBasicLit{
 		rootExpr: rootExpr,
 		astExpr:  astBasicLit,
-		// GoExpr:   newGoExpr(rootExpr, astBasicLit),
 	}
 
 	g.load()

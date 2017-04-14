@@ -60,10 +60,4 @@ func (p *GoFieldList) load() {
 	}
 }
 
-// func (p *GoFieldList) Inspect(f InspectFunc, ctx context.Context) {
-// 	for i := 0; i < len(p.goFields); i++ {
-// 		p.goFields[i].Inspect(f, ctx)
-// 	}
-// }
-
 func (p *GoFieldList) goNode() {}

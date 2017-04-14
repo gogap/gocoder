@@ -7,8 +7,6 @@ import (
 )
 
 type GoCall struct {
-	// *GoExpr
-
 	rootExpr *GoExpr
 	args     []*GoExpr
 	goFun    *GoExpr
@@ -20,7 +18,6 @@ func newGoCall(rootExpr *GoExpr, astCall *ast.CallExpr) *GoCall {
 	g := &GoCall{
 		rootExpr: rootExpr,
 		astCall:  astCall,
-		// GoExpr:   newGoExpr(rootExpr, astCall),
 	}
 
 	g.load()

@@ -7,8 +7,6 @@ import (
 )
 
 type GoIdent struct {
-	// *GoExpr
-
 	rootExpr   *GoExpr
 	goChildren []GoNode
 
@@ -19,7 +17,6 @@ func newGoIdent(rootExpr *GoExpr, ident *ast.Ident) *GoIdent {
 	g := &GoIdent{
 		rootExpr: rootExpr,
 		astExpr:  ident,
-		// GoExpr:   newGoExpr(rootExpr, ident),
 	}
 
 	g.load()
@@ -67,17 +64,6 @@ func (p *GoIdent) load() {
 			switch expr := p.astExpr.Obj.Decl.(type) {
 			case *ast.TypeSpec:
 				{
-
-					// switch n := expr.Type.(type) {
-					// case *ast.StructType:
-					// 	{
-					// 		p.goChildren = append(p.goChildren, newGoStruct(p.rootExpr, expr, n))
-					// 	}
-					// default:
-					// 	if expr.Type != nil {
-					// 		p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr.Type))
-					// 	}
-					// }
 					p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr))
 				}
 			}

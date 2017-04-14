@@ -61,10 +61,6 @@ func (p *GoField) Tag() StructTag {
 
 func (p *GoField) load() {
 
-	// if p.astExpr.Type != nil {
-	// 	p.goExpr = newGoExpr(p.rootExpr, p.astExpr.Type)
-	// }
-
 	for i := 0; i < len(p.astExpr.Names); i++ {
 		p.goNames = append(p.goNames, newGoIdent(p.rootExpr, p.astExpr.Names[i]))
 	}
@@ -75,10 +71,6 @@ func (p *GoField) load() {
 func (p *GoField) Position() token.Position {
 	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
 }
-
-// func (p *GoField) Inspect(f InspectFunc, ctx context.Context) {
-// 	p.goExpr.Inspect(f, ctx)
-// }
 
 func (p *GoField) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.astExpr)

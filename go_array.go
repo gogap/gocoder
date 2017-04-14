@@ -18,7 +18,6 @@ func newGoArray(rootExpr *GoExpr, astExpr *ast.ArrayType) *GoArray {
 		rootExpr: rootExpr,
 		astExpr:  astExpr,
 		astEle:   newGoExpr(rootExpr, astExpr.Elt),
-		// GoExpr:   newGoExpr(rootExpr, astExpr),
 	}
 
 	return g

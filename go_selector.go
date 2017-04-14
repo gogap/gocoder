@@ -36,7 +36,7 @@ func (p *GoSelector) load() {
 	}
 }
 
-func (p *GoSelector) IsUsingPackage() bool {
+func (p *GoSelector) IsInOtherPackage() bool {
 	xIdent, ok := p.astExpr.X.(*ast.Ident)
 	if !ok {
 		return false
@@ -61,7 +61,7 @@ func (p *GoSelector) IsUsingPackage() bool {
 	return b
 }
 
-func (p *GoSelector) GetUsingPackage() *GoPackage {
+func (p *GoSelector) UsingPackage() *GoPackage {
 	xIdent, ok := p.astExpr.X.(*ast.Ident)
 	if !ok {
 		return nil
@@ -81,9 +81,12 @@ func (p *GoSelector) GetUsingPackage() *GoPackage {
 		return nil
 	}
 
-	pkg, _ := gofile.FindImportByName(xIdent.Name)
+	pkg, exist := gofile.FindImportByName(xIdent.Name)
+	if exist {
+		return pkg
+	}
 
-	return pkg
+	return gofile.Package()
 }
 
 func (p *GoSelector) GetSelName() string {

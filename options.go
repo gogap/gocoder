@@ -14,7 +14,6 @@ type Options struct {
 	GoFile          *GoFile
 	ImportByPackage *GoPackage
 	ImportByFile    *GoFile
-	// IgnoreSystemPackages bool
 
 	options []Option
 }

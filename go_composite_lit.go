@@ -7,7 +7,6 @@ import (
 )
 
 type GoCompositeLit struct {
-	// *GoExpr
 	rootExpr *GoExpr
 	goChild  *GoExpr
 
@@ -18,7 +17,6 @@ func newGoCompositeLit(rootExpr *GoExpr, astCompositeLit *ast.CompositeLit) *GoC
 	g := &GoCompositeLit{
 		rootExpr: rootExpr,
 		astExpr:  astCompositeLit,
-		// GoExpr:   newGoExpr(rootExpr, astCompositeLit),
 	}
 
 	g.load()
