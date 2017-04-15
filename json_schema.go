@@ -68,7 +68,9 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 			}
 
 			for i := 0; i < node.NumFields(); i++ {
-				toJsonSchema(root, node.Field(i))
+				if err = toJsonSchema(root, node.Field(i)); err != nil {
+					return
+				}
 			}
 		}
 	case *GoSelector:
@@ -92,7 +94,23 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 				{
 					if goType.MethodByName("String") != nil {
 						root.Type = "string"
+						break
 					}
+
+					root.Type = "object"
+
+					prop := &JsonSchema{
+						Id:         fmt.Sprintf("%s/items", root.Id),
+						Properties: make(map[string]*JsonSchema),
+					}
+
+					if err = toJsonSchema(prop, goType.Node()); err != nil {
+						return
+					}
+
+					root.Items = prop
+
+					break
 				}
 			}
 
@@ -110,14 +128,31 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 			root.Type = "array"
 
 			node.Inspect(func(n GoNode, ctx context.Context) bool {
-				toJsonSchema(prop, n)
+				if err = toJsonSchema(prop, n); err != nil {
+					return false
+				}
 
 				return false
 			}, nil)
 
 			root.Items = prop
 		}
-	case *GoMap, *GoInterface:
+	case *GoMap:
+		{
+			root.Type = "object"
+
+			prop := &JsonSchema{
+				Id:         fmt.Sprintf("%s/items", root.Id),
+				Properties: make(map[string]*JsonSchema),
+			}
+
+			if err = toJsonSchema(prop, node.Value().Node()); err != nil {
+				return
+			}
+
+			root.Items = prop
+		}
+	case *GoInterface:
 		{
 			root.Type = "object"
 		}
@@ -132,9 +167,17 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 				return false
 			}, nil)
 		}
+	case *GoStar:
+		{
+			if err = toJsonSchema(root, node.X().Node()); err != nil {
+				return
+			}
+		}
 	case *GoType:
 		{
-			toJsonSchema(root, node.Node())
+			if err = toJsonSchema(root, node.Node()); err != nil {
+				return
+			}
 		}
 	}
 

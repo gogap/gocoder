@@ -37,14 +37,11 @@ func (p *GoType) Node() GoNode {
 
 func (p *GoType) load() {
 	node := p.astExpr.(ast.Node)
+
 	switch expr := node.(type) {
 	case *ast.StructType:
 		{
 			p.node = newGoStruct(p.rootExpr, p.parent.(*ast.TypeSpec), expr)
-		}
-	case *ast.SelectorExpr:
-		{
-			p.node = newGoSelector(p.rootExpr, expr)
 		}
 	case *ast.Ident:
 		{
@@ -61,6 +58,10 @@ func (p *GoType) load() {
 	case *ast.InterfaceType:
 		{
 			p.node = newGoInterface(p.rootExpr, expr)
+		}
+	case *ast.StarExpr:
+		{
+			p.node = newGoStar(p.rootExpr, expr)
 		}
 	}
 

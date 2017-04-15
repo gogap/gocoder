@@ -138,6 +138,18 @@ func (p *GoExpr) exprToGoNode(n ast.Node) GoNode {
 		{
 			goNode = newGoType(p.rootExpr, nodeType, nodeType.Type)
 		}
+	case *ast.StarExpr:
+		{
+			goNode = newGoStar(p.rootExpr, nodeType)
+		}
+	case *ast.MapType:
+		{
+			goNode = newGoMap(p.rootExpr, nodeType)
+		}
+	case *ast.InterfaceType:
+		{
+			goNode = newGoInterface(p.rootExpr, nodeType)
+		}
 	}
 
 	return goNode
