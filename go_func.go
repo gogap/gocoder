@@ -60,6 +60,10 @@ nextCase:
 	return ""
 }
 
+func (p *GoFunc) X() {
+
+}
+
 func (p *GoFunc) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.decl)
 }

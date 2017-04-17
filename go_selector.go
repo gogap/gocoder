@@ -46,9 +46,9 @@ func (p *GoSelector) IsInOtherPackage() bool {
 		return false
 	}
 
-	if xIdent.Obj != nil {
-		return false
-	}
+	// if xIdent.Obj != nil {
+	// 	return false
+	// }
 
 	if len(xIdent.Name) == 0 {
 		return false
@@ -74,9 +74,9 @@ func (p *GoSelector) UsingPackage() *GoPackage {
 		return gofile.Package()
 	}
 
-	if xIdent.Obj != nil {
-		return gofile.Package()
-	}
+	// if xIdent.Obj != nil {
+	// 	return gofile.Package()
+	// }
 
 	if len(xIdent.Name) == 0 {
 		return gofile.Package()

@@ -167,6 +167,15 @@ func (p *GoPackage) FindType(typeName string) (goType *GoExpr, exist bool) {
 	return
 }
 
+func (p *GoPackage) FindFunc(funcName string) (fn *GoFunc, exist bool) {
+	for i := 0; i < p.NumFuncs(); i++ {
+		if p.Func(i).Name() == funcName {
+			return p.Func(i), true
+		}
+	}
+	return nil, false
+}
+
 func (p *GoPackage) load() error {
 
 	walkFn := func(filename string, info os.FileInfo, err error) error {

@@ -10,13 +10,18 @@ import (
 	"sync"
 )
 
+type importSpec struct {
+	Name string
+	Path string
+}
+
 type GoFile struct {
 	filename      string
 	shortFilename string
 
 	goFuncs []*GoFunc
 
-	importPackages    []string //path
+	importPackages    []importSpec //path
 	mapImportPackages map[string]*GoPackage
 
 	syncNewImportLocker sync.Mutex
@@ -101,7 +106,13 @@ func (p *GoFile) Imports() []string {
 		p.loadImportPackages()
 	})
 
-	return p.importPackages
+	var imps []string
+
+	for i := 0; i < len(p.importPackages); i++ {
+		imps = append(imps, p.importPackages[i].Path)
+	}
+
+	return imps
 }
 
 func (p *GoFile) InGoRoot() bool {
@@ -109,14 +120,13 @@ func (p *GoFile) InGoRoot() bool {
 }
 
 func (p *GoFile) FindImportByName(name string) (goPkg *GoPackage, exist bool) {
-
 	p.importInitOnce.Do(func() {
 		p.loadImportPackages()
 	})
 
 	for i := 0; i < len(p.importPackages); i++ {
-		if name == filepath.Base(p.importPackages[i]) {
-			return p.FindImportByPath(p.importPackages[i])
+		if name == p.importPackages[i].Name {
+			return p.FindImportByPath(p.importPackages[i].Path)
 		}
 	}
 	return nil, false
@@ -179,13 +189,26 @@ func (p *GoFile) FindType(typeName string) (goType *GoExpr, exist bool) {
 
 func (p *GoFile) loadImportPackages() (err error) {
 	for _, impt := range p.astFile.Imports {
+
 		imptPath := strings.Trim(impt.Path.Value, "\"")
 
 		pathInGopath := filepath.Join(p.options.GoPath, "src", imptPath)
 		_, e1 := os.Stat(pathInGopath)
 
 		if e1 == nil {
-			p.importPackages = append(p.importPackages, imptPath)
+
+			spec := importSpec{
+				Name: "",
+				Path: imptPath,
+			}
+
+			if impt.Name != nil {
+				spec.Name = impt.Name.Name
+			} else {
+				spec.Name = filepath.Base(imptPath)
+			}
+
+			p.importPackages = append(p.importPackages, spec)
 			p.mapImportPackages[imptPath] = nil
 
 			continue
@@ -195,7 +218,19 @@ func (p *GoFile) loadImportPackages() (err error) {
 		_, e2 := os.Stat(pathInGoRoot)
 
 		if e2 == nil {
-			p.importPackages = append(p.importPackages, imptPath)
+
+			spec := importSpec{
+				Name: "",
+				Path: imptPath,
+			}
+
+			if impt.Name != nil {
+				spec.Name = impt.Name.Name
+			} else {
+				spec.Name = filepath.Base(imptPath)
+			}
+
+			p.importPackages = append(p.importPackages, spec)
 			p.mapImportPackages[imptPath] = nil
 			continue
 		}
