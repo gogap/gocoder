@@ -68,6 +68,15 @@ func (p *GoIdent) load() {
 				}
 			}
 		}
+	case ast.Fun:
+		{
+			switch expr := p.astExpr.Obj.Decl.(type) {
+			case *ast.FuncDecl:
+				{
+					p.goChildren = append(p.goChildren, newGoExpr(p.rootExpr, expr))
+				}
+			}
+		}
 	}
 }
 

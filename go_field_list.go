@@ -55,6 +55,10 @@ func (p *GoFieldList) Position() token.Position {
 }
 
 func (p *GoFieldList) load() {
+	if p.astExpr == nil {
+		return
+	}
+
 	for i := 0; i < len(p.astExpr.List); i++ {
 		p.goFields = append(p.goFields, newGoField(p.rootExpr, p.astExpr.List[i]))
 	}

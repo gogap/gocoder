@@ -39,7 +39,7 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 			if !node.HasObject() {
 
 				if isBasicType(node.Name()) {
-					root.Type = node.Name()
+					root.Type = goTypeToJsonType(node.Name())
 				}
 
 				typ, exist := node.rootExpr.options.GoPackage.FindType(node.Name())
@@ -118,7 +118,11 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 						return
 					}
 
-					root.Items = prop
+					if isBasicType(prop.Type) {
+						root.Type = prop.Type
+					} else {
+						root.Items = prop
+					}
 
 					break
 				}
@@ -179,7 +183,7 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 		}
 	case *GoStar:
 		{
-			if err = toJsonSchema(root, node.X()); err != nil {
+			if err = toJsonSchema(root, node.X().Node()); err != nil {
 				return
 			}
 		}
@@ -319,7 +323,10 @@ func isBasicType(typ string) bool {
 		typ == "float32" ||
 		typ == "float64" ||
 		typ == "bool" ||
-		typ == "rune" {
+		typ == "rune" ||
+		typ == "integer" ||
+		typ == "number" ||
+		typ == "boolean" {
 		return true
 	}
 

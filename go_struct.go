@@ -52,7 +52,7 @@ func (p *GoStruct) load() {
 
 	var goFileds []*GoField
 
-	for i := 0; i < p.astExpr.Fields.NumFields(); i++ {
+	for i := 0; i < len(p.astExpr.Fields.List); i++ {
 		field := p.astExpr.Fields.List[i]
 		goFileds = append(goFileds, newGoField(p.rootExpr, field))
 	}
