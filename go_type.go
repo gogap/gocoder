@@ -63,6 +63,10 @@ func (p *GoType) load() {
 		{
 			p.node = newGoStar(p.rootExpr, expr)
 		}
+	case *ast.SelectorExpr:
+		{
+			p.node = newGoSelector(p.rootExpr, expr)
+		}
 	}
 
 	typSpec, ok := p.parent.(*ast.TypeSpec)

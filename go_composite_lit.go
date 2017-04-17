@@ -28,6 +28,10 @@ func (p *GoCompositeLit) load() {
 	p.goChild = newGoExpr(p.rootExpr, p.astExpr.Type)
 }
 
+func (p *GoCompositeLit) Type() *GoExpr {
+	return p.goChild
+}
+
 func (p *GoCompositeLit) Inspect(f InspectFunc, ctx context.Context) {
 	p.goChild.Inspect(f, ctx)
 }

@@ -2,7 +2,6 @@ package gocoder
 
 import (
 	"context"
-	// "fmt"
 	"go/ast"
 	"go/token"
 )
@@ -30,6 +29,14 @@ func (p *GoAssignStmt) load() {
 		goExpr := newGoExpr(p.rootExpr, p.astAssignStmt.Rhs[i])
 		p.assignStmtRhsExprs = append(p.assignStmtRhsExprs, goExpr)
 	}
+}
+
+func (p *GoAssignStmt) IsBasic() bool {
+	if len(p.astAssignStmt.Rhs) == 1 {
+		_, ok := p.astAssignStmt.Rhs[0].(*ast.BasicLit)
+		return ok
+	}
+	return false
 }
 
 func (p *GoAssignStmt) Inspect(f InspectFunc, ctx context.Context) {

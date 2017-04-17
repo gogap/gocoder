@@ -1,7 +1,6 @@
 package gocoder
 
 import (
-	"context"
 	"go/ast"
 	"go/token"
 )
@@ -40,22 +39,31 @@ func (p *GoCall) load() {
 }
 
 func (p *GoCall) Name() string {
-	ident, ok := p.astCall.Fun.(*ast.Ident)
-	if !ok {
-		return ""
+
+	switch callFunc := p.astCall.Fun.(type) {
+	case *ast.Ident:
+		{
+			return callFunc.Name
+		}
+	case *ast.SelectorExpr:
+		{
+			return callFunc.Sel.Name
+		}
 	}
-	return ident.Name
+
+	return ""
 }
 
-func (p *GoCall) Args() []*GoExpr {
-	return p.args
+func (p *GoCall) Func() *GoExpr {
+	return p.goFun
 }
 
-func (p *GoCall) Inspect(f InspectFunc, ctx context.Context) {
-	p.goFun.Inspect(f, ctx)
-	for i := 0; i < len(p.args); i++ {
-		p.args[i].Inspect(f, ctx)
-	}
+func (p *GoCall) Arg(i int) *GoExpr {
+	return p.args[i]
+}
+
+func (p *GoCall) NumArgs() int {
+	return len(p.args)
 }
 
 func (p *GoCall) goNode() {

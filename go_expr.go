@@ -150,6 +150,10 @@ func (p *GoExpr) exprToGoNode(n ast.Node) GoNode {
 		{
 			goNode = newGoInterface(p.rootExpr, nodeType)
 		}
+	case *ast.ArrayType:
+		{
+			goNode = newGoArray(p.rootExpr, nodeType)
+		}
 	}
 
 	return goNode

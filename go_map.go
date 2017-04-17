@@ -25,6 +25,10 @@ func newGoMap(rootExpr *GoExpr, astMap *ast.MapType) *GoMap {
 	return g
 }
 
+func (p *GoMap) Name() string {
+	return astTypeToStringType(p.astExpr)
+}
+
 func (p *GoMap) Inspect(f InspectFunc, ctx context.Context) {
 	return
 }

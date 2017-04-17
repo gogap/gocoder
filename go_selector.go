@@ -36,6 +36,10 @@ func (p *GoSelector) load() {
 	}
 }
 
+func (p *GoSelector) X() *GoExpr {
+	return p.goXExpr
+}
+
 func (p *GoSelector) IsInOtherPackage() bool {
 	xIdent, ok := p.astExpr.X.(*ast.Ident)
 	if !ok {
@@ -62,20 +66,21 @@ func (p *GoSelector) IsInOtherPackage() bool {
 }
 
 func (p *GoSelector) UsingPackage() *GoPackage {
+
+	gofile := p.rootExpr.Options().GoFile
+
 	xIdent, ok := p.astExpr.X.(*ast.Ident)
 	if !ok {
-		return nil
+		return gofile.Package()
 	}
 
 	if xIdent.Obj != nil {
-		return nil
+		return gofile.Package()
 	}
 
 	if len(xIdent.Name) == 0 {
-		return nil
+		return gofile.Package()
 	}
-
-	gofile := p.rootExpr.Options().GoFile
 
 	if gofile == nil {
 		return nil

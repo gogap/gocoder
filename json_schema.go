@@ -36,9 +36,19 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 	switch node := goNode.(type) {
 	case *GoIdent:
 		{
-
 			if !node.HasObject() {
-				root.Type = node.Name()
+
+				if isBasicType(node.Name()) {
+					root.Type = node.Name()
+				}
+
+				typ, exist := node.rootExpr.options.GoPackage.FindType(node.Name())
+				if exist {
+					if err = toJsonSchema(root, typ.Node()); err != nil {
+						return
+					}
+				}
+
 				break
 			}
 
@@ -169,7 +179,7 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 		}
 	case *GoStar:
 		{
-			if err = toJsonSchema(root, node.X().Node()); err != nil {
+			if err = toJsonSchema(root, node.X()); err != nil {
 				return
 			}
 		}
@@ -178,6 +188,23 @@ func toJsonSchema(root *JsonSchema, goNode GoNode) (err error) {
 			if err = toJsonSchema(root, node.Node()); err != nil {
 				return
 			}
+		}
+	case *GoBasicLit:
+		{
+			name := strings.ToLower(node.Kind())
+			prop := &JsonSchema{
+				Id:   fmt.Sprintf("%s/properties/%s", root.Id, name),
+				Type: goTypeToJsonType(name),
+			}
+
+			root.Properties[name] = prop
+		}
+	case *GoCompositeLit:
+		{
+			node.Inspect(func(n GoNode, ctx context.Context) bool {
+				toJsonSchema(root, n)
+				return false
+			}, nil)
 		}
 	}
 

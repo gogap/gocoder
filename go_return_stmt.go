@@ -1,7 +1,6 @@
 package gocoder
 
 import (
-	"context"
 	"go/ast"
 	"go/token"
 )
@@ -31,10 +30,12 @@ func (p *GoReturnStmt) load() {
 	}
 }
 
-func (p *GoReturnStmt) Inspect(f InspectFunc, ctx context.Context) {
-	for i := 0; i < len(p.results); i++ {
-		p.results[i].Inspect(f, ctx)
-	}
+func (p *GoReturnStmt) NumResults() int {
+	return len(p.results)
+}
+
+func (p *GoReturnStmt) Result(i int) *GoExpr {
+	return p.results[i]
 }
 
 func (p *GoReturnStmt) Print() error {

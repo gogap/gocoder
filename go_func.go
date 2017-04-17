@@ -42,12 +42,22 @@ func (p *GoFunc) Receiver() string {
 		return ""
 	}
 
-	ident, ok := p.decl.Recv.List[0].Type.(*ast.Ident)
-	if !ok {
-		return ""
+	nextExpr := p.decl.Recv.List[0].Type
+
+nextCase:
+	switch vType := nextExpr.(type) {
+	case *ast.Ident:
+		{
+			return vType.Name
+		}
+	case *ast.StarExpr:
+		{
+			nextExpr = vType.X
+			goto nextCase
+		}
 	}
 
-	return ident.Name
+	return ""
 }
 
 func (p *GoFunc) Print() error {

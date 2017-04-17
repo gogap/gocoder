@@ -23,6 +23,10 @@ func newGoArray(rootExpr *GoExpr, astExpr *ast.ArrayType) *GoArray {
 	return g
 }
 
+func (p *GoArray) Name() string {
+	return astTypeToStringType(p.astExpr)
+}
+
 func (p *GoArray) Inspect(f InspectFunc, ctx context.Context) {
 	p.astEle.Inspect(f, ctx)
 }

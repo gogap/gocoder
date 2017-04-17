@@ -11,7 +11,6 @@ type GoField struct {
 
 	astExpr *ast.Field
 
-	// goExpr  *GoExpr
 	goNames []*GoIdent
 
 	fieldType *GoType
