@@ -27,9 +27,6 @@ type GoFile struct {
 	syncNewImportLocker sync.Mutex
 
 	*GoExpr
-
-	importInitOnce sync.Once
-	loadDeclOnce   sync.Once
 }
 
 func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
@@ -57,6 +54,10 @@ func NewGoFile(filename string, options ...Option) (goFile *GoFile, err error) {
 		gf.shortFilename = strings.TrimPrefix(filename, gf.options.GoRoot+"/src/")
 	}
 
+	if err = gf.load(); err != nil {
+		return
+	}
+
 	goFile = gf
 
 	return
@@ -67,20 +68,10 @@ func (p *GoFile) Print() error {
 }
 
 func (p *GoFile) NumFuncs() int {
-
-	p.loadDeclOnce.Do(func() {
-		p.loadFuncDecls()
-	})
-
 	return len(p.goFuncs)
 }
 
 func (p *GoFile) Func(i int) *GoFunc {
-
-	p.loadDeclOnce.Do(func() {
-		p.loadFuncDecls()
-	})
-
 	return p.goFuncs[i]
 }
 
@@ -102,10 +93,6 @@ func (p *GoFile) String() string {
 
 func (p *GoFile) Imports() []string {
 
-	p.importInitOnce.Do(func() {
-		p.loadImportPackages()
-	})
-
 	var imps []string
 
 	for i := 0; i < len(p.importPackages); i++ {
@@ -120,10 +107,6 @@ func (p *GoFile) InGoRoot() bool {
 }
 
 func (p *GoFile) FindImportByName(name string) (goPkg *GoPackage, exist bool) {
-	p.importInitOnce.Do(func() {
-		p.loadImportPackages()
-	})
-
 	for i := 0; i < len(p.importPackages); i++ {
 		if name == p.importPackages[i].Name {
 			return p.FindImportByPath(p.importPackages[i].Path)
@@ -157,11 +140,6 @@ func (p *GoFile) FindImportByPath(importPath string) (*GoPackage, bool) {
 }
 
 func (p *GoFile) FindType(typeName string) (goType *GoExpr, exist bool) {
-
-	p.loadDeclOnce.Do(func() {
-		p.loadFuncDecls()
-	})
-
 	for i := 0; i < len(p.GoExpr.astFile.Decls); i++ {
 		ast.Inspect(p.GoExpr.astFile.Decls[i], func(n ast.Node) bool {
 			if exist {
@@ -185,6 +163,19 @@ func (p *GoFile) FindType(typeName string) (goType *GoExpr, exist bool) {
 	}
 
 	return
+}
+
+func (p *GoFile) load() (err error) {
+
+	if err = p.loadImportPackages(); err != nil {
+		return
+	}
+
+	if err = p.loadFuncDecls(); err != nil {
+		return
+	}
+
+	return nil
 }
 
 func (p *GoFile) loadImportPackages() (err error) {

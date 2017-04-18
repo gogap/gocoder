@@ -63,8 +63,6 @@ func newGoExpr(rootExpr *GoExpr, expr ast.Node, options ...Option) *GoExpr {
 
 	goExpr.options.init(opts...)
 
-	goExpr.load()
-
 	return goExpr
 }
 
@@ -77,11 +75,14 @@ func (p *GoExpr) Root() *GoExpr {
 }
 
 func (p *GoExpr) Node() GoNode {
-	return p.exprNode
-}
 
-func (p *GoExpr) load() {
+	if p.exprNode != nil {
+		return p.exprNode
+	}
+
 	p.exprNode = p.exprToGoNode(p.expr)
+
+	return p.exprNode
 }
 
 func (p *GoExpr) goNode() {}

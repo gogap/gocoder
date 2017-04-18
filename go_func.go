@@ -12,6 +12,9 @@ type GoFunc struct {
 	callExprs []*ast.CallExpr
 
 	assignments map[string]*GoAssignStmt
+
+	goParams  *GoFieldList
+	goResults *GoFieldList
 }
 
 func newGoFunc(rootExpr *GoExpr, decl *ast.FuncDecl) (gofunc *GoFunc) {
@@ -60,10 +63,6 @@ nextCase:
 	return ""
 }
 
-func (p *GoFunc) X() {
-
-}
-
 func (p *GoFunc) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.decl)
 }
@@ -73,11 +72,11 @@ func (p *GoFunc) Root() *GoExpr {
 }
 
 func (p *GoFunc) Params() *GoFieldList {
-	return newFieldList(p.rootExpr, p.decl.Type.Params)
+	return p.goParams
 }
 
 func (p *GoFunc) Results() *GoFieldList {
-	return newFieldList(p.rootExpr, p.decl.Type.Results)
+	return p.goResults
 }
 
 func (p *GoFunc) FindCall(funcName string) (call *GoCall, exist bool) {
@@ -167,6 +166,9 @@ func (p *GoFunc) load() {
 		}
 		return true
 	})
+
+	p.goParams = newFieldList(p.rootExpr, p.decl.Type.Params)
+	p.goResults = newFieldList(p.rootExpr, p.decl.Type.Results)
 }
 
 func (p *GoFunc) goNode() {

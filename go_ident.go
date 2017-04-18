@@ -11,6 +11,8 @@ type GoIdent struct {
 	goChildren []GoNode
 
 	astExpr *ast.Ident
+
+	objKind string
 }
 
 func newGoIdent(rootExpr *GoExpr, ident *ast.Ident) *GoIdent {
@@ -28,6 +30,10 @@ func (p *GoIdent) HasObject() bool {
 	return p.astExpr.Obj != nil
 }
 
+func (p *GoIdent) ObjectKind() string {
+	return p.objKind
+}
+
 func (p *GoIdent) load() {
 
 	if p.astExpr.Obj == nil {
@@ -37,7 +43,7 @@ func (p *GoIdent) load() {
 	switch p.astExpr.Obj.Kind {
 	case ast.Var:
 		{
-
+			p.objKind = "var"
 			switch expr := p.astExpr.Obj.Decl.(type) {
 			case *ast.AssignStmt:
 				{
@@ -61,6 +67,7 @@ func (p *GoIdent) load() {
 		}
 	case ast.Typ:
 		{
+			p.objKind = "type"
 			switch expr := p.astExpr.Obj.Decl.(type) {
 			case *ast.TypeSpec:
 				{
@@ -70,6 +77,7 @@ func (p *GoIdent) load() {
 		}
 	case ast.Fun:
 		{
+			p.objKind = "func"
 			switch expr := p.astExpr.Obj.Decl.(type) {
 			case *ast.FuncDecl:
 				{

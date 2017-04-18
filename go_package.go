@@ -5,7 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
+
+	"github.com/orcaman/concurrent-map"
 )
 
 type GoPackageOption func(*GoPackage) error
@@ -16,10 +17,8 @@ type GoPackage struct {
 	pkgPath string
 	pkgDir  string
 
-	goFiles map[string]*GoFile
+	goFiles cmap.ConcurrentMap // map[string]*GoFile
 	files   []string
-
-	loadLocker sync.Mutex
 
 	inGoRoot bool
 }
@@ -28,7 +27,7 @@ func NewGoPackage(pkgPath string, options ...Option) (goPackage *GoPackage, err 
 	pkg := &GoPackage{
 		pkgPath: pkgPath,
 		options: &Options{},
-		goFiles: make(map[string]*GoFile),
+		goFiles: cmap.New(),
 	}
 
 	if err = pkg.options.init(options...); err != nil {
@@ -114,12 +113,9 @@ func (p *GoPackage) NumFile() int {
 func (p *GoPackage) File(i int) *GoFile {
 	filename := p.files[i]
 
-	p.loadLocker.Lock()
-	defer p.loadLocker.Unlock()
-
-	gf, exist := p.goFiles[filename]
+	gf, exist := p.goFiles.Get(filename)
 	if exist {
-		return gf
+		return gf.(*GoFile)
 	}
 
 	opts := p.options.Copy()
@@ -130,7 +126,10 @@ func (p *GoPackage) File(i int) *GoFile {
 		panic(err)
 	}
 
-	p.goFiles[filename] = gofile
+	if !p.goFiles.SetIfAbsent(filename, gofile) {
+		gf, _ := p.goFiles.Get(filename)
+		return gf.(*GoFile)
+	}
 
 	return gofile
 }
