@@ -29,6 +29,10 @@ func newGoStruct(rootExpr *GoExpr, spec *ast.TypeSpec, expr *ast.StructType, opt
 }
 
 func (p *GoStruct) Name() string {
+	if p.spec == nil {
+		return ""
+	}
+
 	return p.spec.Name.String()
 }
 

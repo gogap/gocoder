@@ -1,6 +1,7 @@
 package gocoder
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"

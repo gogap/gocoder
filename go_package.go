@@ -191,6 +191,10 @@ func (p *GoPackage) load() error {
 			return nil
 		}
 
+		if strings.HasSuffix(filename, "_test.go") {
+			return nil
+		}
+
 		p.files = append(p.files, filename)
 
 		return nil

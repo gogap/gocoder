@@ -41,7 +41,8 @@ func (p *GoType) load() {
 	switch expr := node.(type) {
 	case *ast.StructType:
 		{
-			p.node = newGoStruct(p.rootExpr, p.parent.(*ast.TypeSpec), expr)
+			spec, _ := p.parent.(*ast.TypeSpec)
+			p.node = newGoStruct(p.rootExpr, spec, expr)
 		}
 	case *ast.Ident:
 		{
