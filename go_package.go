@@ -2,6 +2,7 @@ package gocoder
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -221,28 +222,30 @@ func (p *GoPackage) FindFunc(funcName string) (fn *GoFunc, exist bool) {
 
 func (p *GoPackage) load() error {
 
-	walkFn := func(filename string, info os.FileInfo, err error) error {
-
-		if strings.Contains(filename, "/.") {
-			return nil
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		if filepath.Ext(filename) != ".go" {
-			return nil
-		}
-
-		if strings.HasSuffix(filename, "_test.go") {
-			return nil
-		}
-
-		p.files = append(p.files, filename)
-
-		return nil
+	files, err := ioutil.ReadDir(p.pkgDir)
+	if err != nil {
+		return err
 	}
 
-	return filepath.Walk(p.pkgDir, walkFn)
+	for i := 0; i < len(files); i++ {
+		if files[i].IsDir() {
+			continue
+		}
+
+		if strings.HasPrefix(files[i].Name(), ".") {
+			continue
+		}
+
+		if strings.HasSuffix(files[i].Name(), "_test.go") {
+			continue
+		}
+
+		if filepath.Ext(files[i].Name()) != ".go" {
+			continue
+		}
+
+		p.files = append(p.files, filepath.Join(p.pkgDir, files[i].Name()))
+	}
+
+	return nil
 }
