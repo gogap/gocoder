@@ -188,47 +188,146 @@ func (p *GoExpr) Inspect(f InspectFunc, ctx context.Context) {
 	}
 }
 
-func (p *GoExpr) Position() token.Position {
+func (p *GoExpr) Position() (begin token.Position, end token.Position) {
 	if p.astFileSet == nil {
-		return p.rootExpr.astFileSet.Position(p.expr.Pos())
+		return p.rootExpr.astFileSet.Position(p.expr.Pos()), p.rootExpr.astFileSet.Position(p.expr.End())
 	}
-	return p.astFileSet.Position(p.expr.Pos())
+	return p.astFileSet.Position(p.expr.Pos()), p.astFileSet.Position(p.expr.End())
 }
 
 func (p *GoExpr) IsIdent() bool {
-	_, ok := p.expr.(*ast.ArrayType)
+
+	expr := p.expr
+
+	if n, ok := p.expr.(*ast.TypeSpec); ok {
+		expr = n
+	}
+
+	_, ok := expr.(*ast.Ident)
+
 	return ok
 }
 
 func (p *GoExpr) IsArray() bool {
-	_, ok := p.expr.(*ast.ArrayType)
+
+	expr := p.expr
+
+	if n, ok := p.expr.(*ast.TypeSpec); ok {
+		expr = n
+	}
+
+	_, ok := expr.(*ast.ArrayType)
 	return ok
 }
 
 func (p *GoExpr) IsInterface() bool {
-	_, ok := p.expr.(*ast.InterfaceType)
+
+	expr := p.expr
+
+	if n, ok := p.expr.(*ast.TypeSpec); ok {
+		expr = n
+	}
+
+	_, ok := expr.(*ast.InterfaceType)
 	return ok
 }
 
 func (p *GoExpr) IsMap() bool {
-	_, ok := p.expr.(*ast.MapType)
+
+	expr := p.expr
+
+	if n, ok := p.expr.(*ast.TypeSpec); ok {
+		expr = n
+	}
+
+	_, ok := expr.(*ast.MapType)
 	return ok
 }
 
 func (p *GoExpr) IsStruct() bool {
-	_, ok := p.expr.(*ast.StructType)
+
+	expr := p.expr
+
+	if n, ok := p.expr.(*ast.TypeSpec); ok {
+		expr = n
+	}
+
+	_, ok := expr.(*ast.StructType)
 	return ok
 }
 
 func (p *GoExpr) IsSelector() bool {
-	_, ok := p.expr.(*ast.SelectorExpr)
+
+	expr := p.expr
+
+	if n, ok := p.expr.(*ast.TypeSpec); ok {
+		expr = n
+	}
+
+	_, ok := expr.(*ast.SelectorExpr)
 	return ok
 }
 
-func (p *GoExpr) String() string {
+func (p *GoExpr) Name() string {
+
+	switch n := p.expr.(type) {
+	case *ast.FuncDecl:
+		{
+			return n.Name.Name
+		}
+	case *ast.TypeSpec:
+		{
+			return n.Name.Name
+		}
+	case *ast.ImportSpec:
+		{
+			return n.Name.Name
+		}
+	case *ast.File:
+		{
+			return n.Name.Name
+		}
+	case *ast.ValueSpec:
+		{
+			if len(n.Names) > 0 {
+				return n.Names[0].Name
+			}
+		}
+	}
+
+	return ""
+}
+
+// TODO
+func (p *GoExpr) Snippet() (code string, err error) {
+	return
+}
+
+func (p *GoExpr) Type() string {
+	switch exp := p.expr.(type) {
+	case *ast.TypeSpec:
+		{
+			switch exp.Type.(type) {
+			case *ast.StructType:
+				{
+					return fmt.Sprintf("struct.%s", exp.Name)
+				}
+			case *ast.InterfaceType:
+				{
+					return fmt.Sprintf("interface{}.%s", exp.Name)
+				}
+			}
+		}
+	}
+
 	str, ok := p.Node().(fmt.Stringer)
 	if ok {
 		return str.String()
 	}
+
 	return astTypeToStringType(p.expr)
+}
+
+func (p *GoExpr) String() string {
+	return fmt.Sprintf("%s: %s", p.Name(), p.Type())
 }

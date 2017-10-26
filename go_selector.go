@@ -103,8 +103,8 @@ func (p *GoSelector) Inspect(f InspectFunc, ctx context.Context) {
 	p.goSelIdent.Inspect(f, ctx)
 }
 
-func (p *GoSelector) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoSelector) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoSelector) Print() error {

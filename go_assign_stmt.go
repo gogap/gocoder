@@ -49,8 +49,8 @@ func (p *GoAssignStmt) Print() error {
 	return ast.Print(p.rootExpr.astFileSet, p.astAssignStmt)
 }
 
-func (p *GoAssignStmt) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astAssignStmt.Pos())
+func (p *GoAssignStmt) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astAssignStmt.Pos()), p.rootExpr.astFileSet.Position(p.astAssignStmt.End())
 }
 
 func (p *GoAssignStmt) goNode() {}

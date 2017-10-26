@@ -174,6 +174,6 @@ func (p *GoFunc) load() {
 func (p *GoFunc) goNode() {
 }
 
-func (p *GoFunc) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.decl.Pos())
+func (p *GoFunc) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.decl.Pos()), p.rootExpr.astFileSet.Position(p.decl.End())
 }

@@ -36,8 +36,8 @@ func (p *GoCompositeLit) Inspect(f InspectFunc, ctx context.Context) {
 	p.goChild.Inspect(f, ctx)
 }
 
-func (p *GoCompositeLit) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoCompositeLit) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoCompositeLit) Print() error {

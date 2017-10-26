@@ -67,8 +67,8 @@ func (p *GoField) load() {
 	p.fieldType = newGoType(p.rootExpr, p.astExpr, p.astExpr.Type)
 }
 
-func (p *GoField) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoField) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoField) Print() error {

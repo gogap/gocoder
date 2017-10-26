@@ -7,7 +7,7 @@ import (
 
 type GoNode interface {
 	goNode()
-	Position() token.Position
+	Position() (begin token.Position, end token.Position)
 	Print() error
 }
 

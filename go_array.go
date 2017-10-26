@@ -37,8 +37,8 @@ func (p *GoArray) Ele() *GoExpr {
 
 func (p *GoArray) goNode() {}
 
-func (p *GoArray) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoArray) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoArray) Print() error {

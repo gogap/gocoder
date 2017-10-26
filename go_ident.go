@@ -101,8 +101,8 @@ func (p *GoIdent) Name() string {
 	return p.astExpr.Name
 }
 
-func (p *GoIdent) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoIdent) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoIdent) Print() error {

@@ -44,8 +44,8 @@ func (p *GoStruct) Field(i int) *GoField {
 	return p.goFileds[i]
 }
 
-func (p *GoStruct) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoStruct) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoStruct) Print() error {

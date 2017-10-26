@@ -130,8 +130,8 @@ func (p *GoType) IsSelector() bool {
 	return ok
 }
 
-func (p *GoType) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoType) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoType) Print() error {

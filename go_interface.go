@@ -26,8 +26,8 @@ func (p *GoInterface) Inspect(f InspectFunc, ctx context.Context) {
 
 func (p *GoInterface) goNode() {}
 
-func (p *GoInterface) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoInterface) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoInterface) Print() error {

@@ -50,8 +50,8 @@ func (p *GoFieldList) TypesAre(paramsType ...string) bool {
 	return true
 }
 
-func (p *GoFieldList) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoFieldList) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoFieldList) load() {

@@ -69,8 +69,8 @@ func (p *GoCall) NumArgs() int {
 func (p *GoCall) goNode() {
 }
 
-func (p *GoCall) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astCall.Pos())
+func (p *GoCall) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astCall.Pos()), p.rootExpr.astFileSet.Position(p.astCall.End())
 }
 
 func (p *GoCall) Print() error {

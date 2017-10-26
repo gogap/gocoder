@@ -36,8 +36,8 @@ func (p *GoUnary) Inspect(f InspectFunc, ctx context.Context) {
 	}
 }
 
-func (p *GoUnary) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoUnary) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoUnary) Print() error {

@@ -40,8 +40,8 @@ func (p *GoBasicLit) Kind() string {
 
 func (p *GoBasicLit) goNode() {}
 
-func (p *GoBasicLit) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoBasicLit) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoBasicLit) Print() error {

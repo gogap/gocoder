@@ -43,8 +43,8 @@ func (p *GoMap) Key() *GoExpr {
 
 func (p *GoMap) goNode() {}
 
-func (p *GoMap) Position() token.Position {
-	return p.rootExpr.astFileSet.Position(p.astExpr.Pos())
+func (p *GoMap) Position() (token.Position, token.Position) {
+	return p.rootExpr.astFileSet.Position(p.astExpr.Pos()), p.rootExpr.astFileSet.Position(p.astExpr.End())
 }
 
 func (p *GoMap) Print() error {

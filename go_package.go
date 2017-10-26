@@ -156,6 +156,50 @@ func (p *GoPackage) Func(funcIndex int) *GoFunc {
 	return nil
 }
 
+func (p *GoPackage) NumTypes() int {
+	num := 0
+	for i := 0; i < p.NumFile(); i++ {
+		num += p.File(i).NumTypes()
+	}
+	return num
+}
+
+func (p *GoPackage) Type(typeIndex int) *GoExpr {
+
+	for i := 0; i < p.NumFile(); i++ {
+		max := p.File(i).NumTypes()
+		if typeIndex >= max {
+			typeIndex -= max
+			continue
+		}
+
+		return p.File(i).Type(typeIndex)
+	}
+	return nil
+}
+
+func (p *GoPackage) NumVars() int {
+	num := 0
+	for i := 0; i < p.NumFile(); i++ {
+		num += p.File(i).NumVars()
+	}
+	return num
+}
+
+func (p *GoPackage) Var(varIndex int) *GoExpr {
+
+	for i := 0; i < p.NumFile(); i++ {
+		max := p.File(i).NumVars()
+		if varIndex >= max {
+			varIndex -= max
+			continue
+		}
+
+		return p.File(i).Var(varIndex)
+	}
+	return nil
+}
+
 func (p *GoPackage) FindType(typeName string) (goType *GoExpr, exist bool) {
 	for i := 0; i < p.NumFile(); i++ {
 		goType, exist = p.File(i).FindType(typeName)

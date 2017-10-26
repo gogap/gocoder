@@ -20,6 +20,8 @@ type GoFile struct {
 	shortFilename string
 
 	goFuncs []*GoFunc
+	goTypes []*GoExpr
+	goVars  []*GoExpr
 
 	importPackages    []importSpec //path
 	mapImportPackages map[string]*GoPackage
@@ -73,6 +75,22 @@ func (p *GoFile) NumFuncs() int {
 
 func (p *GoFile) Func(i int) *GoFunc {
 	return p.goFuncs[i]
+}
+
+func (p *GoFile) NumTypes() int {
+	return len(p.goTypes)
+}
+
+func (p *GoFile) Type(i int) *GoExpr {
+	return p.goTypes[i]
+}
+
+func (p *GoFile) NumVars() int {
+	return len(p.goVars)
+}
+
+func (p *GoFile) Var(i int) *GoExpr {
+	return p.goVars[i]
 }
 
 func (p *GoFile) Package() *GoPackage {
@@ -175,6 +193,14 @@ func (p *GoFile) load() (err error) {
 		return
 	}
 
+	if err = p.loadTypeDecls(); err != nil {
+		return
+	}
+
+	if err = p.loadVarDecls(); err != nil {
+		return
+	}
+
 	return nil
 }
 
@@ -238,6 +264,50 @@ func (p *GoFile) loadFuncDecls() error {
 			case *ast.FuncDecl:
 				{
 					p.goFuncs = append(p.goFuncs, newGoFunc(p.GoExpr, d))
+				}
+			}
+
+			return true
+		})
+	}
+
+	return nil
+}
+
+func (p *GoFile) loadTypeDecls() error {
+	for _, decl := range p.astFile.Decls {
+		ast.Inspect(decl, func(n ast.Node) bool {
+
+			switch d := n.(type) {
+			case *ast.TypeSpec:
+				{
+					p.goTypes = append(p.goTypes, newGoExpr(p.rootExpr, d))
+				}
+			}
+
+			return true
+		})
+	}
+
+	return nil
+}
+
+func (p *GoFile) loadVarDecls() error {
+	for _, decl := range p.astFile.Decls {
+		ast.Inspect(decl, func(n ast.Node) bool {
+
+			switch d := n.(type) {
+			case *ast.FuncDecl:
+				{
+					return false
+				}
+			case *ast.TypeSpec:
+				{
+					return false
+				}
+			case *ast.ValueSpec:
+				{
+					p.goVars = append(p.goVars, newGoExpr(p.rootExpr, d))
 				}
 			}
 
