@@ -200,7 +200,7 @@ func (p *GoExpr) IsIdent() bool {
 	expr := p.expr
 
 	if n, ok := p.expr.(*ast.TypeSpec); ok {
-		expr = n
+		expr = n.Type
 	}
 
 	_, ok := expr.(*ast.Ident)
@@ -213,7 +213,7 @@ func (p *GoExpr) IsArray() bool {
 	expr := p.expr
 
 	if n, ok := p.expr.(*ast.TypeSpec); ok {
-		expr = n
+		expr = n.Type
 	}
 
 	_, ok := expr.(*ast.ArrayType)
@@ -225,7 +225,7 @@ func (p *GoExpr) IsInterface() bool {
 	expr := p.expr
 
 	if n, ok := p.expr.(*ast.TypeSpec); ok {
-		expr = n
+		expr = n.Type
 	}
 
 	_, ok := expr.(*ast.InterfaceType)
@@ -237,7 +237,7 @@ func (p *GoExpr) IsMap() bool {
 	expr := p.expr
 
 	if n, ok := p.expr.(*ast.TypeSpec); ok {
-		expr = n
+		expr = n.Type
 	}
 
 	_, ok := expr.(*ast.MapType)
@@ -249,7 +249,7 @@ func (p *GoExpr) IsStruct() bool {
 	expr := p.expr
 
 	if n, ok := p.expr.(*ast.TypeSpec); ok {
-		expr = n
+		expr = n.Type
 	}
 
 	_, ok := expr.(*ast.StructType)
