@@ -285,7 +285,7 @@ func (p *GoFile) loadTypeDecls() error {
 				}
 			case *ast.BlockStmt:
 				{
-					return true
+					return false
 				}
 			}
 
