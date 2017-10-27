@@ -283,6 +283,10 @@ func (p *GoFile) loadTypeDecls() error {
 				{
 					p.goTypes = append(p.goTypes, newGoExpr(p.rootExpr, d))
 				}
+			case *ast.BlockStmt:
+				{
+					return true
+				}
 			}
 
 			return true
